@@ -1,7 +1,9 @@
 package main
 
 import (
+	"context"
 	"mimic/modules/aggregate"
+	"mimic/modules/api"
 	"mimic/modules/db"
 	"mimic/modules/db/mimic"
 	"mimic/modules/db/mimic/blocks"
@@ -25,5 +27,10 @@ func main() {
 	agg := aggregate.New(plugins)
 
 	agg.Init()
-	agg.Start()
+	agg.Start().Await(context.Background())
+	defer agg.Stop()
+
+	router := api.NewAPIServer()
+	router.Init()
+	router.Start()
 }
