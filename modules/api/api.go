@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"reflect"
 	"strings"
@@ -24,20 +25,18 @@ type APIServer struct {
 
 func (s *APIServer) RegisterMethod(alias, methodName string, servc any) ServiceMethod {
 	servType := reflect.TypeOf(servc)
+
 	method, success := servType.MethodByName(methodName)
-
-	for i := 0; i < servType.NumMethod(); i++ {
-		fmt.Println("method", servType.Method(i).Name)
-	}
-
-	fmt.Println("method", methodName, method, servType)
 	if !success {
 		panic("method not found")
 	}
 
+	slog.Info("Method registered.",
+		"methodName", methodName,
+		"methodNum", servType.NumMethod())
+
 	mtype := method.Type
 
-	fmt.Println("mtype.NumIn()", success)
 	return ServiceMethod{
 		method:    method,
 		argType:   mtype.In(1).Elem(),
@@ -130,7 +129,9 @@ func (s *APIServer) Start() {
 	s.RegisterService(blockApi, "block_api")
 	s.RegisterService(accountHistoryApi, "account_history_api")
 
-	go http.ListenAndServe(":3000", s.r)
+	port := "3000"
+	slog.Info("APIServer accepting requests.", "port", port)
+	http.ListenAndServe(":"+port, s.r)
 }
 
 func NewAPIServer() *APIServer {
