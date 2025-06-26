@@ -44,7 +44,7 @@ func (db *db) Init() error {
 }
 
 func (db *db) Start() *promise.Promise[any] {
-	return utils.PromiseResolve[any](nil)
+	return utils.PromiseResolve[any](db)
 }
 
 func (db *db) Stop() error {
