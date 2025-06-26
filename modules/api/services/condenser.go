@@ -175,15 +175,11 @@ type GetAccountsReply struct {
 	LifetimeVoteCount   int              `json:"lifetime_vote_count"`
 	PostCount           int              `json:"post_count"`
 	CanVote             bool             `json:"can_vote"`
-	VotingManabar       struct {
-		CurrentMana    string `json:"current_mana"`
-		LastUpdateTime int    `json:"last_update_time"`
-	} `json:"voting_manabar"`
-	DownvoteManabar struct {
-		CurrentMana    string `json:"current_mana"`
-		LastUpdateTime int    `json:"last_update_time"`
-	} `json:"downvote_manabar"`
-	VotingPower                   int    `json:"voting_power"`
+
+	VotingManabar   VotingManabar   `json:"voting_manabar"`
+	DownvoteManabar DownvoteManabar `json:"downvote_manabar"`
+	VotingPower     int             `json:"voting_power"`
+
 	Balance                       string `json:"balance"`
 	SavingsBalance                string `json:"savings_balance"`
 	HbdBalance                    string `json:"hbd_balance"`
@@ -230,6 +226,16 @@ type GetAccountsReply struct {
 	WitnessVotes           []any  `json:"witness_votes"`
 	TagsUsage              []any  `json:"tags_usage"`
 	GuestBloggers          []any  `json:"guest_bloggers"`
+}
+
+type VotingManabar struct {
+	CurrentMana    string `json:"current_mana"`
+	LastUpdateTime int    `json:"last_update_time"`
+}
+
+type DownvoteManabar struct {
+	CurrentMana    string `json:"current_mana"`
+	LastUpdateTime int    `json:"last_update_time"`
 }
 
 // get_accounts
