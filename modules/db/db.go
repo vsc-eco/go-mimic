@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"log/slog"
 	"mimic/lib/utils"
 	a "mimic/modules/aggregate"
 
@@ -30,7 +31,8 @@ func (db *db) Init() error {
 	ctx, cancel := context.WithCancel(context.Background())
 	db.cancel = cancel
 
-	c, err := mongo.Connect(ctx, options.Client().ApplyURI(db.conf.Get().DbURI))
+	uri := db.conf.Get().DbURI
+	c, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
 	if err != nil {
 		return err
 	}
@@ -39,6 +41,8 @@ func (db *db) Init() error {
 		return err
 	}
 	db.Client = c
+
+	slog.Info("Connected to MongoDB.", "url", uri)
 
 	return nil
 }
