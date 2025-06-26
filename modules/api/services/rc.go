@@ -3,8 +3,41 @@ package services
 type RcApi struct {
 }
 
-func (api RcApi) FindRcAccounts() {
+type rcArgs struct {
+	Accounts []string `json:"accounts"`
+}
 
+type RcReply struct {
+	RcAccounts []RcAccount `json:"rc_accounts"`
+}
+
+type RcAccount struct {
+	Account                 string `json:"account"`
+	DelegatedRc             int    `json:"delegated_rc"`
+	MaxRc                   int    `json:"max_rc"`
+	MaxRcCreationAdjustment string `json:"max_rc_creation_adjustment"`
+	RcManabar               struct {
+		CurrentMana    int `json:"current_mana"`
+		LastUpdateTime int `json:"last_update_time"`
+	} `json:"rc_manabar"`
+}
+
+func (api RcApi) FindRcAccounts(args *rcArgs, reply *RcReply) {
+	for _, account := range args.Accounts {
+		reply.RcAccounts = append(reply.RcAccounts, RcAccount{
+			Account:                 account,
+			DelegatedRc:             0,
+			MaxRc:                   1000000000,
+			MaxRcCreationAdjustment: "1000000000 VESTS",
+			RcManabar: struct {
+				CurrentMana    int "json:\"current_mana\""
+				LastUpdateTime int "json:\"last_update_time\""
+			}{
+				CurrentMana:    1000000000,
+				LastUpdateTime: 1550731380,
+			},
+		})
+	}
 }
 
 func (api RcApi) Expose(mr RegisterMethod) {

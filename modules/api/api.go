@@ -10,7 +10,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/mitchellh/mapstructure"
 
-	"github.com/vsc-eco/go-mimic/modules/api/services"
+	"mimic/modules/api/services"
 	// ← v1 import path
 	// ← v1 JSON codec
 )
@@ -31,7 +31,7 @@ func (s *APIServer) RegisterMethod(alias, methodName string, servc any) ServiceM
 	}
 
 	fmt.Println("method", methodName, method, servType)
-	if success != true {
+	if !success {
 		panic("method not found")
 	}
 
@@ -121,8 +121,15 @@ func (s *APIServer) Init() {
 func (s *APIServer) Start() {
 
 	service := &services.Condenser{}
+	rcService := &services.RcApi{}
+	blockApi := &services.BlockAPI{}
+	accountHistoryApi := &services.AccountHistoryApi{}
 
 	s.RegisterService(service, "condenser_api")
+	s.RegisterService(rcService, "rc_api")
+	s.RegisterService(blockApi, "block_api")
+	s.RegisterService(accountHistoryApi, "account_history_api")
+
 	go http.ListenAndServe(":3000", s.r)
 }
 

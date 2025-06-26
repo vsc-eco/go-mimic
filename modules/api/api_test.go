@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/vsc-eco/go-mimic/modules/api"
+	"mimic/modules/api"
 )
 
 func TestSimplePost(t *testing.T) {
@@ -47,6 +47,8 @@ func TestSimplePost(t *testing.T) {
 	if rpcResp.Error != "" {
 		log.Fatalf("RPC error: %s", rpcResp.Error)
 	}
+
+	select {}
 
 	// client, err := rpc.DialHTTPPath("tcp", "localhost"+":3000", "/")
 
