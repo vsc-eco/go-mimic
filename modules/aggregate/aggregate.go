@@ -58,8 +58,8 @@ func (a *Aggregate) Start() *promise.Promise[any] {
 	return promise.Then(
 		promise.All(a.ctx, promises...),
 		a.ctx,
-		func([]any) (any, error) {
-			return nil, nil
+		func(arg []any) (any, error) {
+			return arg, nil
 		},
 	)
 }
