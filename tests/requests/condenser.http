@@ -1,0 +1,12 @@
+### condenser_api_get_accounts
+
+POST http://localhost:3000 HTTP/1.1
+Accept: application/json
+Content-Type: application/json
+
+{
+  "jsonrpc": "2.0",
+  "method": "condenser_api.get_accounts",
+  "params": [["hiveio", "alice"]],
+  "id": 1
+}
