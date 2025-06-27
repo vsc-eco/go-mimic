@@ -3,14 +3,12 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"log/slog"
 	"net/http"
 	"reflect"
 	"strings"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/mitchellh/mapstructure"
 
 	"mimic/modules/api/services"
 	// ← v1 import path
@@ -87,13 +85,17 @@ func (s *APIServer) Init() {
 		methodSpec := s.rpcRoutes[method]
 
 		args := reflect.New(methodSpec.argType)
-		err := mapstructure.Decode(req["params"], args.Interface())
+		paramsJSON, err := json.Marshal(req["params"])
 		if err != nil {
-			fmt.Println("args", args, err)
+			http.Error(w, "invalid params", http.StatusBadRequest)
+			return
 		}
 
-		log.Println(args)
-
+		if err := json.Unmarshal(paramsJSON, args.Interface()); err != nil {
+			fmt.Println("args", args, err)
+			http.Error(w, "failed to decode params", http.StatusBadRequest)
+			return
+		}
 		reply := reflect.New(s.rpcRoutes[method].replyType)
 
 		strs := strings.Split(method, ".")
