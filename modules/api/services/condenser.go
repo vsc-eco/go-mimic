@@ -242,7 +242,7 @@ type DownvoteManabar struct {
 	LastUpdateTime int `json:"last_update_time"`
 }
 
-func getMockData(accountName string) (*GetAccountsReply, error) {
+func getMockDataa(accountName string) (*GetAccountsReply, error) {
 	// TODO: propagate this into db
 	f, err := os.ReadFile("mockdata/condenser_api_get_accounts.mock.json")
 	if err != nil {
@@ -265,10 +265,15 @@ func getMockData(accountName string) (*GetAccountsReply, error) {
 
 // get_accounts
 func (t *Condenser) GetAccounts(args *GetAccountsArgs, reply *[]GetAccountsReply) {
+	data, err := getMockData[GetAccountsReply]("mockdata/condenser_api_get_accounts.mock.json")
+	if err != nil {
+		panic(err)
+	}
+
 	for _, a := range *args {
 		accountName := a[0]
-		account, err := getMockData(accountName)
-		if err != nil {
+		account, ok := data[accountName]
+		if !ok {
 			// TODO: handle this error from db
 			// NOTE: if not found, do what?
 			//   - accounts partially exist
@@ -278,7 +283,7 @@ func (t *Condenser) GetAccounts(args *GetAccountsArgs, reply *[]GetAccountsReply
 			fmt.Println("no account found")
 			continue
 		}
-		*reply = append(*reply, *account)
+		*reply = append(*reply, account)
 	}
 }
 
