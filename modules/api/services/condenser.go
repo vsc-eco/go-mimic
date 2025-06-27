@@ -1,6 +1,10 @@
 package services
 
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+	"os"
+)
 
 type TestMethodArgs struct {
 	A int `json:"a"`
@@ -154,7 +158,7 @@ type AccountAuthority struct {
 	AccountAuths    []interface{} `json:"account_auths"`
 	KeyAuths        []interface{} `json:"key_auths"`
 }
-type GetAccountsReply struct {
+type GetAccountsData struct {
 	Id                  int              `json:"id"`
 	Name                string           `json:"name"`
 	Owner               AccountAuthority `json:"owner"`
@@ -217,7 +221,7 @@ type GetAccountsReply struct {
 	PendingClaimedAccounts int    `json:"pending_claimed_accounts"`
 	DelayedVotes           []any  `json:"delayed_votes"`
 	VestingBalance         string `json:"vesting_balance"`
-	Reputation             string `json:"reputation"`
+	Reputation             int    `json:"reputation"`
 	TransferHistory        []any  `json:"transfer_history"`
 	MarketHistory          []any  `json:"market_history"`
 	PostHistory            []any  `json:"post_history"`
@@ -229,109 +233,59 @@ type GetAccountsReply struct {
 }
 
 type VotingManabar struct {
-	CurrentMana    string `json:"current_mana"`
-	LastUpdateTime int    `json:"last_update_time"`
+	CurrentMana    int `json:"current_mana"`
+	LastUpdateTime int `json:"last_update_time"`
 }
 
 type DownvoteManabar struct {
-	CurrentMana    string `json:"current_mana"`
-	LastUpdateTime int    `json:"last_update_time"`
+	CurrentMana    int `json:"current_mana"`
+	LastUpdateTime int `json:"last_update_time"`
+}
+
+type GetAccountsReply struct {
+	ID             int               `json:"id"`
+	JsonRpcVersion string            `json:"jsonrpc"`
+	Result         []GetAccountsData `json:"result"`
+}
+
+func getMockData(accountName string) (*GetAccountsData, error) {
+	// TODO: propagate this into db
+	f, err := os.ReadFile("mockdata/condenser_api_get_accounts.mock.json")
+	if err != nil {
+		fmt.Println("failed to read mockdata")
+		panic(err)
+	}
+
+	data := make(map[string]GetAccountsData)
+	if err := json.Unmarshal(f, &data); err != nil {
+		panic(err)
+	}
+
+	account, ok := data[accountName]
+	if !ok {
+		return nil, fmt.Errorf("account not found: %s\n", accountName)
+	}
+
+	return &account, nil
 }
 
 // get_accounts
-func (t *Condenser) GetAccounts(args *GetAccountsArgs, reply *[]GetAccountsReply) {
-
-	for _, account := range *args {
-		*reply = append(*reply, GetAccountsReply{
-			Id:   1,
-			Name: account[0],
-			Owner: AccountAuthority{
-				WeightThreshold: 1,
-				AccountAuths: []interface{}{
-					1, "",
-				},
-				KeyAuths: []interface{}{},
-			},
-			Active: AccountAuthority{
-				WeightThreshold: 1,
-				AccountAuths:    []interface{}{},
-				KeyAuths:        []interface{}{},
-			},
-			Posting: AccountAuthority{
-				WeightThreshold: 1,
-				AccountAuths:    []interface{}{},
-				KeyAuths:        []interface{}{},
-			},
-			VotingManabar: struct {
-				CurrentMana    string `json:"current_mana"`
-				LastUpdateTime int    `json:"last_update_time"`
-			}{
-				CurrentMana:    "1000000000",
-				LastUpdateTime: 1000000000,
-			},
-			MemoKey:                       "STM7wrsg1BZogeK7X3eG4ivxmLaH69FomR8rLkBbepb3z3hm5SbXu",
-			JsonMeta:                      "",
-			Proxy:                         "",
-			Created:                       "2023-10-01T00:00:00",
-			Mined:                         false,
-			RecoveryAccount:               "test",
-			LastAccountRecovery:           "2023-10-01T00:00:00",
-			ResetAccount:                  "null",
-			CommentCount:                  0,
-			LifetimeVoteCount:             0,
-			PostCount:                     0,
-			CanVote:                       true,
-			VotingPower:                   0,
-			Balance:                       "1.100 HIVE",
-			SavingsBalance:                "1.200 HIVE",
-			HbdBalance:                    "1.300 HBD",
-			HbdSeconds:                    "0",
-			HbdSecondsLastUpdate:          "2023-10-01T00:00:00",
-			HbdLastInterestPayment:        "2023-10-01T00:00:00",
-			SavingsHbdBalance:             "10.000 HBD",
-			SavingsHbdSeconds:             "0",
-			SavingsHbdSecondsLastUpdate:   "2023-10-01T00:00:00",
-			SavingsHbdLastInterestPayment: "2023-10-01T00:00:00",
-			SavingsWithdrawRequests:       0,
-			RewardHbdBalance:              "0.000 HBD",
-			RewardHiveBalance:             "0.000 HIVE",
-			RewardVestingBalance:          "0.000000 VESTS",
-			RewardVestingHive:             "0.000 HIVE",
-			VestingShares:                 "10000000.000000 VESTS",
-			DelegatedVestingShares:        "0.000000 VESTS",
-			ReceivedVestingShares:         "0.000000 VESTS",
-
-			VestingWithdrawRate:    "0.000000 VESTS",
-			PostVotingPower:        "0.000000 VESTS",
-			NextVestingWithdrawal:  "2023-10-01T00:00:00",
-			Withdrawn:              0,
-			ToWithdraw:             0,
-			WithdrawRoutes:         0,
-			PendingTransfers:       0,
-			CurationRewards:        0,
-			PostingRewards:         0,
-			ProxiedVsfVotes:        []int{0, 0, 0, 0},
-			WitnessesVotedFor:      0,
-			LastPost:               "2023-10-01T00:00:00",
-			LastRootPost:           "2023-10-01T00:00:00",
-			LastVoteTime:           "2023-10-01T00:00:00",
-			PostBandwidth:          0,
-			PendingClaimedAccounts: 0,
-			DelayedVotes:           []any{},
-			VestingBalance:         "10000000.000000 VESTS",
-			Reputation:             "0",
-			TransferHistory:        []any{},
-			MarketHistory:          []any{},
-			PostHistory:            []any{},
-			VoteHistory:            []any{},
-			OtherHistory:           []any{},
-			WitnessVotes:           []any{},
-			TagsUsage:              []any{},
-			GuestBloggers:          []any{},
-		})
-		fmt.Println("act", account[0])
+func (t *Condenser) GetAccounts(args *GetAccountsArgs, reply *[]GetAccountsData) {
+	for _, a := range *args {
+		accountName := a[0]
+		account, err := getMockData(accountName)
+		if err != nil {
+			// TODO: handle this error from db
+			// NOTE: if not found, do what?
+			//   - accounts partially exist
+			//   - accounts do not exist at all
+			// from the current implementation we just don't send anything back
+			// (empty result array)
+			fmt.Println("no account found")
+			continue
+		}
+		*reply = append(*reply, *account)
 	}
-	fmt.Println("GetAccounts", args)
 }
 
 //	{
