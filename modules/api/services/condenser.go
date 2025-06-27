@@ -158,7 +158,7 @@ type AccountAuthority struct {
 	AccountAuths    []interface{} `json:"account_auths"`
 	KeyAuths        []interface{} `json:"key_auths"`
 }
-type GetAccountsData struct {
+type GetAccountsReply struct {
 	Id                  int              `json:"id"`
 	Name                string           `json:"name"`
 	Owner               AccountAuthority `json:"owner"`
@@ -242,13 +242,7 @@ type DownvoteManabar struct {
 	LastUpdateTime int `json:"last_update_time"`
 }
 
-type GetAccountsReply struct {
-	ID             int               `json:"id"`
-	JsonRpcVersion string            `json:"jsonrpc"`
-	Result         []GetAccountsData `json:"result"`
-}
-
-func getMockData(accountName string) (*GetAccountsData, error) {
+func getMockData(accountName string) (*GetAccountsReply, error) {
 	// TODO: propagate this into db
 	f, err := os.ReadFile("mockdata/condenser_api_get_accounts.mock.json")
 	if err != nil {
@@ -256,7 +250,7 @@ func getMockData(accountName string) (*GetAccountsData, error) {
 		panic(err)
 	}
 
-	data := make(map[string]GetAccountsData)
+	data := make(map[string]GetAccountsReply)
 	if err := json.Unmarshal(f, &data); err != nil {
 		panic(err)
 	}
@@ -270,7 +264,7 @@ func getMockData(accountName string) (*GetAccountsData, error) {
 }
 
 // get_accounts
-func (t *Condenser) GetAccounts(args *GetAccountsArgs, reply *[]GetAccountsData) {
+func (t *Condenser) GetAccounts(args *GetAccountsArgs, reply *[]GetAccountsReply) {
 	for _, a := range *args {
 		accountName := a[0]
 		account, err := getMockData(accountName)
