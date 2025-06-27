@@ -1,5 +1,11 @@
 package services
 
+import (
+	"fmt"
+
+	"golang.org/x/exp/slog"
+)
+
 type BlockAPI struct {
 }
 
@@ -33,8 +39,19 @@ type GetBlockReply struct {
 	Block getBlockBlock `json:"block"`
 }
 
-func (BlockAPI) GetBlock(args *GetBlockArgs, reply *GetBlockRangeReply) {
+func (BlockAPI) GetBlock(args *GetBlockArgs, reply *GetBlockReply) {
+	data, err := getMockData[GetBlockReply]("mockdata/block_api.get_block.mock.json")
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(args)
 
+	block, ok := data[fmt.Sprintf("%d", args.BlockNum)]
+	if !ok {
+		slog.Error("Block not found.", "block_num", args.BlockNum)
+	} else {
+		*reply = block
+	}
 }
 
 func (BlockAPI) Expose(rm RegisterMethod) {

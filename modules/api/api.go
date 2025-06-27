@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"log/slog"
 	"net/http"
 	"reflect"
@@ -90,6 +91,8 @@ func (s *APIServer) Init() {
 		if err != nil {
 			fmt.Println("args", args, err)
 		}
+
+		log.Println(args)
 
 		reply := reflect.New(s.rpcRoutes[method].replyType)
 
