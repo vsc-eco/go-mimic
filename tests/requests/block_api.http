@@ -1,4 +1,4 @@
-### get_block
+### block_api.get_block
 
 POST http://localhost:3000 HTTP/1.1
 Accept: application/json
@@ -9,4 +9,18 @@ Content-Type: application/json
   "method": "block_api.get_block",
   "params": { "block_num": 3 },
   "id": 3
+}
+
+
+### block_api.get_block_range
+POST http://localhost:3000 HTTP/1.1
+
+{
+  "jsonrpc":"2.0", 
+  "method":"block_api.get_block_range",
+  "params": {
+    "starting_block_num": 0,
+    "count": 1
+  }, 
+  "id":1
 }
