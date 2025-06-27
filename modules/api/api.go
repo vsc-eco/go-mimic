@@ -71,8 +71,6 @@ func (s *APIServer) Init() {
 			return
 		}
 
-		fmt.Println("req", req)
-
 		method, valid := req["method"].(string)
 
 		if !valid {
@@ -89,8 +87,9 @@ func (s *APIServer) Init() {
 
 		args := reflect.New(methodSpec.argType)
 		err := mapstructure.Decode(req["params"], args.Interface())
-
-		fmt.Println("args", args, err)
+		if err != nil {
+			fmt.Println("args", args, err)
+		}
 
 		reply := reflect.New(s.rpcRoutes[method].replyType)
 
@@ -101,8 +100,6 @@ func (s *APIServer) Init() {
 			reply,
 		})
 
-		fmt.Println("req[\"Method\"]", req["method"], reply)
-
 		res := map[string]any{
 			"jsonrpc": "2.0",
 			"result":  reply.Interface(),
@@ -110,7 +107,7 @@ func (s *APIServer) Init() {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-
+		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(res)
 	})
 
