@@ -6,7 +6,7 @@ import (
 )
 
 func getMockData[T any](mockPath string) (map[string]T, error) {
-	// TODO: propagate this into db
+	// TODO: save to mock data to db
 	f, err := os.ReadFile(mockPath)
 	if err != nil {
 		return nil, err
@@ -16,6 +16,6 @@ func getMockData[T any](mockPath string) (map[string]T, error) {
 	if err := json.Unmarshal(f, &data); err != nil {
 		return nil, err
 	}
-	return data, nil
 
+	return data, nil
 }

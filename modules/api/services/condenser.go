@@ -1,9 +1,7 @@
 package services
 
 import (
-	"encoding/json"
 	"fmt"
-	"os"
 )
 
 type TestMethodArgs struct {
@@ -240,27 +238,6 @@ type VotingManabar struct {
 type DownvoteManabar struct {
 	CurrentMana    int `json:"current_mana"`
 	LastUpdateTime int `json:"last_update_time"`
-}
-
-func getMockDataa(accountName string) (*GetAccountsReply, error) {
-	// TODO: propagate this into db
-	f, err := os.ReadFile("mockdata/condenser_api_get_accounts.mock.json")
-	if err != nil {
-		fmt.Println("failed to read mockdata")
-		panic(err)
-	}
-
-	data := make(map[string]GetAccountsReply)
-	if err := json.Unmarshal(f, &data); err != nil {
-		panic(err)
-	}
-
-	account, ok := data[accountName]
-	if !ok {
-		return nil, fmt.Errorf("account not found: %s\n", accountName)
-	}
-
-	return &account, nil
 }
 
 // get_accounts
