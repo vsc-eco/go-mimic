@@ -10,7 +10,22 @@ Mimic is an end to end network simulation tool for the Hive blockchain. It provi
 - Update account metadata or public keys via mock transactions
 - Perform real world transactions against a mock environment, respecting signature validation, balance validation, and transaction expiration
 
+## Getting Started
 
+In case you don't have the binaries installed locally. A `compose.yml` file is 
+given for MongoDB, exposing the default port `27017`.
+
+```sh
+docker compose up
+```
+
+Start the mimic server
+
+```sh
+go run ./cmd/main.go
+# or with Makefile
+make
+```
 
 ### Supported Transactions
 
@@ -29,8 +44,8 @@ Not all transactions are supported on Mimic. However, we have implemented the fo
 
 **Hive APIs**
 - `account_history_api.get_ops_in_block` 🚧
-- `block_api.get_block` 🚧
-- `block_api.get_block_range` 🚧
+- `block_api.get_block` ✅
+- `block_api.get_block_range` ✅
 - `condenser_api.broadcast_transaction` 🚧
 - `condenser_api.broadcast_transaction_synchronous` 🚧
 - `condenser_api.get_dynamic_global_properties` 🚧
@@ -40,7 +55,7 @@ Not all transactions are supported on Mimic. However, we have implemented the fo
 - `condenser_api.get_open_orders` 🚧
 - `condenser_api.get_conversion_requests` 🚧
 - `condenser_api.get_collateralized_conversion_requests` 🚧
-- `condenser_api.get_accounts` 🚧
+- `condenser_api.get_accounts` ✅
 - `rc_api.find_rc_accounts` 🚧
 - `/health` ✅
 
