@@ -2,6 +2,7 @@ package db
 
 import (
 	"errors"
+	"mimic/lib/utils"
 	"mimic/modules/config"
 	"os"
 )
@@ -20,7 +21,7 @@ type DbConfig = *dbConfigStruct
 
 func NewDbConfig() DbConfig {
 	return &dbConfigStruct{config.New(dbConfig{
-		DbURI: "mongodb://localhost:27017",
+		DbURI: utils.EnvOrDefault("MONGO_URL", "mongodb://localhost:27017"),
 	}, nil)}
 }
 

@@ -1,0 +1,10 @@
+services:
+  mongodb:
+    image: mongo:8.0.10-noble
+    container_name: vsc_go-mimic_mongodb
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+    ports:
+      - 27017:27017

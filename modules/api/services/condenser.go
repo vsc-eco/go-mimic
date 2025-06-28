@@ -1,6 +1,8 @@
 package services
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type TestMethodArgs struct {
 	A int `json:"a"`
@@ -175,15 +177,11 @@ type GetAccountsReply struct {
 	LifetimeVoteCount   int              `json:"lifetime_vote_count"`
 	PostCount           int              `json:"post_count"`
 	CanVote             bool             `json:"can_vote"`
-	VotingManabar       struct {
-		CurrentMana    string `json:"current_mana"`
-		LastUpdateTime int    `json:"last_update_time"`
-	} `json:"voting_manabar"`
-	DownvoteManabar struct {
-		CurrentMana    string `json:"current_mana"`
-		LastUpdateTime int    `json:"last_update_time"`
-	} `json:"downvote_manabar"`
-	VotingPower                   int    `json:"voting_power"`
+
+	VotingManabar   VotingManabar   `json:"voting_manabar"`
+	DownvoteManabar DownvoteManabar `json:"downvote_manabar"`
+	VotingPower     int             `json:"voting_power"`
+
 	Balance                       string `json:"balance"`
 	SavingsBalance                string `json:"savings_balance"`
 	HbdBalance                    string `json:"hbd_balance"`
@@ -221,7 +219,7 @@ type GetAccountsReply struct {
 	PendingClaimedAccounts int    `json:"pending_claimed_accounts"`
 	DelayedVotes           []any  `json:"delayed_votes"`
 	VestingBalance         string `json:"vesting_balance"`
-	Reputation             string `json:"reputation"`
+	Reputation             int    `json:"reputation"`
 	TransferHistory        []any  `json:"transfer_history"`
 	MarketHistory          []any  `json:"market_history"`
 	PostHistory            []any  `json:"post_history"`
@@ -232,100 +230,38 @@ type GetAccountsReply struct {
 	GuestBloggers          []any  `json:"guest_bloggers"`
 }
 
+type VotingManabar struct {
+	CurrentMana    int `json:"current_mana"`
+	LastUpdateTime int `json:"last_update_time"`
+}
+
+type DownvoteManabar struct {
+	CurrentMana    int `json:"current_mana"`
+	LastUpdateTime int `json:"last_update_time"`
+}
+
 // get_accounts
 func (t *Condenser) GetAccounts(args *GetAccountsArgs, reply *[]GetAccountsReply) {
-
-	for _, account := range *args {
-		*reply = append(*reply, GetAccountsReply{
-			Id:   1,
-			Name: account[0],
-			Owner: AccountAuthority{
-				WeightThreshold: 1,
-				AccountAuths: []interface{}{
-					1, "",
-				},
-				KeyAuths: []interface{}{},
-			},
-			Active: AccountAuthority{
-				WeightThreshold: 1,
-				AccountAuths:    []interface{}{},
-				KeyAuths:        []interface{}{},
-			},
-			Posting: AccountAuthority{
-				WeightThreshold: 1,
-				AccountAuths:    []interface{}{},
-				KeyAuths:        []interface{}{},
-			},
-			VotingManabar: struct {
-				CurrentMana    string `json:"current_mana"`
-				LastUpdateTime int    `json:"last_update_time"`
-			}{
-				CurrentMana:    "1000000000",
-				LastUpdateTime: 1000000000,
-			},
-			MemoKey:                       "STM7wrsg1BZogeK7X3eG4ivxmLaH69FomR8rLkBbepb3z3hm5SbXu",
-			JsonMeta:                      "",
-			Proxy:                         "",
-			Created:                       "2023-10-01T00:00:00",
-			Mined:                         false,
-			RecoveryAccount:               "test",
-			LastAccountRecovery:           "2023-10-01T00:00:00",
-			ResetAccount:                  "null",
-			CommentCount:                  0,
-			LifetimeVoteCount:             0,
-			PostCount:                     0,
-			CanVote:                       true,
-			VotingPower:                   0,
-			Balance:                       "1.100 HIVE",
-			SavingsBalance:                "1.200 HIVE",
-			HbdBalance:                    "1.300 HBD",
-			HbdSeconds:                    "0",
-			HbdSecondsLastUpdate:          "2023-10-01T00:00:00",
-			HbdLastInterestPayment:        "2023-10-01T00:00:00",
-			SavingsHbdBalance:             "10.000 HBD",
-			SavingsHbdSeconds:             "0",
-			SavingsHbdSecondsLastUpdate:   "2023-10-01T00:00:00",
-			SavingsHbdLastInterestPayment: "2023-10-01T00:00:00",
-			SavingsWithdrawRequests:       0,
-			RewardHbdBalance:              "0.000 HBD",
-			RewardHiveBalance:             "0.000 HIVE",
-			RewardVestingBalance:          "0.000000 VESTS",
-			RewardVestingHive:             "0.000 HIVE",
-			VestingShares:                 "10000000.000000 VESTS",
-			DelegatedVestingShares:        "0.000000 VESTS",
-			ReceivedVestingShares:         "0.000000 VESTS",
-
-			VestingWithdrawRate:    "0.000000 VESTS",
-			PostVotingPower:        "0.000000 VESTS",
-			NextVestingWithdrawal:  "2023-10-01T00:00:00",
-			Withdrawn:              0,
-			ToWithdraw:             0,
-			WithdrawRoutes:         0,
-			PendingTransfers:       0,
-			CurationRewards:        0,
-			PostingRewards:         0,
-			ProxiedVsfVotes:        []int{0, 0, 0, 0},
-			WitnessesVotedFor:      0,
-			LastPost:               "2023-10-01T00:00:00",
-			LastRootPost:           "2023-10-01T00:00:00",
-			LastVoteTime:           "2023-10-01T00:00:00",
-			PostBandwidth:          0,
-			PendingClaimedAccounts: 0,
-			DelayedVotes:           []any{},
-			VestingBalance:         "10000000.000000 VESTS",
-			Reputation:             "0",
-			TransferHistory:        []any{},
-			MarketHistory:          []any{},
-			PostHistory:            []any{},
-			VoteHistory:            []any{},
-			OtherHistory:           []any{},
-			WitnessVotes:           []any{},
-			TagsUsage:              []any{},
-			GuestBloggers:          []any{},
-		})
-		fmt.Println("act", account[0])
+	data, err := getMockData[GetAccountsReply]("mockdata/condenser_api_get_accounts.mock.json")
+	if err != nil {
+		panic(err)
 	}
-	fmt.Println("GetAccounts", args)
+
+	for _, a := range *args {
+		accountName := a[0]
+		account, ok := data[accountName]
+		if !ok {
+			// TODO: handle this error from db
+			// NOTE: if not found, do what?
+			//   - accounts partially exist
+			//   - accounts do not exist at all
+			// from the current implementation we just don't send anything back
+			// (empty result array)
+			fmt.Println("no account found")
+			continue
+		}
+		*reply = append(*reply, account)
+	}
 }
 
 //	{

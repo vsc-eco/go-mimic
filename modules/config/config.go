@@ -120,7 +120,10 @@ func (c *Config[T]) Stop() error {
 }
 
 func (c *Config[T]) Get() T {
-	return c.value
+	if c.loaded {
+		return c.value
+	}
+	return c.defaultValue
 }
 
 func (c *Config[T]) Update(updater func(*T)) error {

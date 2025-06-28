@@ -3,12 +3,12 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"reflect"
 	"strings"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/mitchellh/mapstructure"
 
 	"mimic/modules/api/services"
 	// ← v1 import path
@@ -24,20 +24,18 @@ type APIServer struct {
 
 func (s *APIServer) RegisterMethod(alias, methodName string, servc any) ServiceMethod {
 	servType := reflect.TypeOf(servc)
+
 	method, success := servType.MethodByName(methodName)
-
-	for i := 0; i < servType.NumMethod(); i++ {
-		fmt.Println("method", servType.Method(i).Name)
-	}
-
-	fmt.Println("method", methodName, method, servType)
 	if !success {
 		panic("method not found")
 	}
 
+	slog.Info("Method registered.",
+		"methodName", methodName,
+		"methodNum", servType.NumMethod())
+
 	mtype := method.Type
 
-	fmt.Println("mtype.NumIn()", success)
 	return ServiceMethod{
 		method:    method,
 		argType:   mtype.In(1).Elem(),
@@ -72,8 +70,6 @@ func (s *APIServer) Init() {
 			return
 		}
 
-		fmt.Println("req", req)
-
 		method, valid := req["method"].(string)
 
 		if !valid {
@@ -89,10 +85,17 @@ func (s *APIServer) Init() {
 		methodSpec := s.rpcRoutes[method]
 
 		args := reflect.New(methodSpec.argType)
-		err := mapstructure.Decode(req["params"], args.Interface())
+		paramsJSON, err := json.Marshal(req["params"])
+		if err != nil {
+			http.Error(w, "invalid params", http.StatusBadRequest)
+			return
+		}
 
-		fmt.Println("args", args, err)
-
+		if err := json.Unmarshal(paramsJSON, args.Interface()); err != nil {
+			fmt.Println("args", args, err)
+			http.Error(w, "failed to decode params", http.StatusBadRequest)
+			return
+		}
 		reply := reflect.New(s.rpcRoutes[method].replyType)
 
 		strs := strings.Split(method, ".")
@@ -102,8 +105,6 @@ func (s *APIServer) Init() {
 			reply,
 		})
 
-		fmt.Println("req[\"Method\"]", req["method"], reply)
-
 		res := map[string]any{
 			"jsonrpc": "2.0",
 			"result":  reply.Interface(),
@@ -111,7 +112,7 @@ func (s *APIServer) Init() {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-
+		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(res)
 	})
 
@@ -130,7 +131,9 @@ func (s *APIServer) Start() {
 	s.RegisterService(blockApi, "block_api")
 	s.RegisterService(accountHistoryApi, "account_history_api")
 
-	go http.ListenAndServe(":3000", s.r)
+	port := "3000"
+	slog.Info("APIServer accepting requests.", "port", port)
+	http.ListenAndServe(":"+port, s.r)
 }
 
 func NewAPIServer() *APIServer {
