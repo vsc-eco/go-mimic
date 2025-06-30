@@ -2,6 +2,7 @@ package services
 
 import (
 	"fmt"
+	"mimic/mock"
 )
 
 type TestMethodArgs struct {
@@ -152,9 +153,9 @@ type GetAccountsArgs [][]string
 //		"guest_bloggers": []
 //	  }
 type AccountAuthority struct {
-	WeightThreshold int           `json:"weight_threshold"`
-	AccountAuths    []interface{} `json:"account_auths"`
-	KeyAuths        []interface{} `json:"key_auths"`
+	WeightThreshold int   `json:"weight_threshold"`
+	AccountAuths    []any `json:"account_auths"`
+	KeyAuths        []any `json:"key_auths"`
 }
 type GetAccountsReply struct {
 	Id                  int              `json:"id"`
@@ -242,7 +243,7 @@ type DownvoteManabar struct {
 
 // get_accounts
 func (t *Condenser) GetAccounts(args *GetAccountsArgs, reply *[]GetAccountsReply) {
-	data, err := getMockData[GetAccountsReply]("mockdata/condenser_api_get_accounts.mock.json")
+	data, err := mock.GetMockData[GetAccountsReply]("mockdata/condenser_api_get_accounts.mock.json")
 	if err != nil {
 		panic(err)
 	}
