@@ -51,8 +51,7 @@ func (c *Condenser) Start() *promise.Promise[any] {
 	}
 
 	entries := make([]any, 0, len(data))
-	for k, v := range data {
-		slog.Info("Seeding account.", "name", k)
+	for _, v := range data {
 		entries = append(entries, v)
 	}
 
@@ -63,7 +62,7 @@ func (c *Condenser) Start() *promise.Promise[any] {
 	if err != nil && !mongo.IsDuplicateKeyError(err) {
 		slog.Error("Failed to seed collection.", "err", err)
 	} else {
-		slog.Info("Seed condenser collection.", "seed", result)
+		slog.Info("Seed collection.", "collection", c.Name(), "new-record", len(result.InsertedIDs))
 	}
 
 	return utils.PromiseResolve[any](nil)
