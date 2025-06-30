@@ -3,6 +3,7 @@ package services
 import (
 	"fmt"
 	"mimic/mock"
+	"mimic/modules/db/mimic/blockdb"
 
 	"golang.org/x/exp/slog"
 )
@@ -16,7 +17,7 @@ type GetBlockRangeArgs struct {
 }
 
 type GetBlockRangeReply struct {
-	Blocks []getBlockBlock `json:"blocks"`
+	Blocks []blockdb.Block `json:"blocks"`
 }
 
 func (BlockAPI) GetBlockRange(args *GetBlockRangeArgs, reply *GetBlockRangeReply) {
@@ -39,20 +40,8 @@ type GetBlockArgs struct {
 	BlockNum int64 `json:"block_num"`
 }
 
-type getBlockBlock struct {
-	Previous              string   `json:"previous"`
-	Timestamp             string   `json:"timestamp"`
-	Witness               string   `json:"witness"`
-	TransactionMerkleRoot string   `json:"transaction_merkle_root"`
-	Extensions            []string `json:"extensions"`
-	WitnessSignature      string   `json:"witness_signature"`
-	Transactions          []string `json:"transactions"`
-	BlockId               string   `json:"block_id"`
-	SigningKey            string   `json:"signing_key"`
-	TransactionIds        []string `json:"transaction_ids"`
-}
 type GetBlockReply struct {
-	Block getBlockBlock `json:"block"`
+	Block blockdb.Block `json:"block"`
 }
 
 func (BlockAPI) GetBlock(args *GetBlockArgs, reply *GetBlockReply) {
