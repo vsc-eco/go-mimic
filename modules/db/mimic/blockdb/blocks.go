@@ -1,4 +1,4 @@
-package blocks
+package blockdb
 
 import (
 	"context"
