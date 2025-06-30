@@ -1,6 +1,7 @@
 package db
 
 import (
+	"log/slog"
 	"mimic/lib/utils"
 	a "mimic/modules/aggregate"
 
@@ -31,6 +32,7 @@ func NewCollection(db *DbInstance, name string, opts ...*options.CollectionOptio
 // Init implements aggregate.Plugin.
 func (c *Collection) Init() error {
 	c.Collection = c.db.Collection(c.name, c.opts...)
+	slog.Info("Initalized collection.", "collection", c.name)
 	return nil
 }
 
