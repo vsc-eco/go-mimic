@@ -2,6 +2,7 @@ package services
 
 import (
 	"fmt"
+	"mimic/mock"
 
 	"golang.org/x/exp/slog"
 )
@@ -19,7 +20,7 @@ type GetBlockRangeReply struct {
 }
 
 func (BlockAPI) GetBlockRange(args *GetBlockRangeArgs, reply *GetBlockRangeReply) {
-	data, err := getMockData[GetBlockReply]("mockdata/block_api.get_block.mock.json")
+	data, err := mock.GetMockData[GetBlockReply]("mockdata/block_api.get_block.mock.json")
 	if err != nil {
 		panic(err)
 	}
@@ -55,7 +56,7 @@ type GetBlockReply struct {
 }
 
 func (BlockAPI) GetBlock(args *GetBlockArgs, reply *GetBlockReply) {
-	data, err := getMockData[GetBlockReply]("mockdata/block_api.get_block.mock.json")
+	data, err := mock.GetMockData[GetBlockReply]("mockdata/block_api.get_block.mock.json")
 	if err != nil {
 		panic(err)
 	}
