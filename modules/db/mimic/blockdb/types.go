@@ -1,4 +1,4 @@
-package blocks
+package blockdb
 
 type HiveBlock struct {
 	BlockId        string `json:"block_id" bson:"id"`

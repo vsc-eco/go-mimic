@@ -6,7 +6,7 @@ import (
 	"mimic/modules/api"
 	"mimic/modules/db"
 	"mimic/modules/db/mimic"
-	"mimic/modules/db/mimic/blocks"
+	"mimic/modules/db/mimic/blockdb"
 	"mimic/modules/db/mimic/condenserdb"
 	"mimic/modules/db/mimic/state"
 )
@@ -18,7 +18,7 @@ func main() {
 	mimicDb := mimic.New(db)
 	mimicDb.Init()
 
-	hiveBlocks := blocks.New(mimicDb)
+	hiveBlocks := blockdb.New(mimicDb)
 	stateDb := state.New(mimicDb)
 	condenserDb := condenserdb.New(mimicDb)
 
