@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"mimic/lib/utils"
 	"mimic/mock"
+	"mimic/modules/db"
 	"mimic/modules/db/mimic"
 	"time"
 
@@ -21,7 +22,7 @@ type Condenser struct {
 var condenserDb = &Condenser{nil}
 
 func New(d *mimic.MimicDb) *Condenser {
-	condenserDb.Collection = d.DbInstance.Collection("condenser")
+	condenserDb.Collection = db.NewCollection(d.DbInstance, "condenser")
 	return condenserDb
 }
 
@@ -32,11 +33,12 @@ func (c *Condenser) Init() error {
 		Options: options.Index().SetUnique(true).SetName("name_unique"),
 	})
 
-	if err != nil && !mongo.IsDuplicateKeyError(err) {
+	if err != nil {
 		slog.Info("Failed to create index.", "collection", c.Name(), "err", err)
-	} else {
-		slog.Info("Index created.", "collection", c.Name(), "index", indexName)
+		return err
 	}
+
+	slog.Info("Index created.", "collection", c.Name(), "index", indexName)
 
 	return nil
 }
