@@ -1,8 +1,7 @@
 package services
 
 import (
-	"fmt"
-	"mimic/mock"
+	"log/slog"
 	"mimic/modules/db/mimic/condenserdb"
 )
 
@@ -28,183 +27,19 @@ func (t *Condenser) GetBlock(args *TestMethodArgs, reply *TestMethodReply) error
 
 type GetAccountsArgs [][]string
 
-//	{
-//		"id": 1370484,
-//		"name": "hiveio",
-//		"owner": {
-//		  "weight_threshold": 1,
-//		  "account_auths": [],
-//		  "key_auths": [
-//			[
-//			  "STM65PUAPA4yC4RgPtGgsPupxT6yJtMhmT5JHFdsT3uoCbR8WJ25s",
-//			  1
-//			]
-//		  ]
-//		},
-//		"active": {
-//		  "weight_threshold": 1,
-//		  "account_auths": [],
-//		  "key_auths": [
-//			[
-//			  "STM69zfrFGnZtU3gWFWpQJ6GhND1nz7TJsKBTjcWfebS1JzBEweQy",
-//			  1
-//			]
-//		  ]
-//		},
-//		"posting": {
-//		  "weight_threshold": 1,
-//		  "account_auths": [["threespeak", 1], ["vimm.app", 1]],
-//		  "key_auths": [
-//			[
-//			  "STM6vJmrwaX5TjgTS9dPH8KsArso5m91fVodJvv91j7G765wqcNM9",
-//			  1
-//			]
-//		  ]
-//		},
-//		"memo_key": "STM7wrsg1BZogeK7X3eG4ivxmLaH69FomR8rLkBbepb3z3hm5SbXu",
-//		"json_metadata": "",
-//		"posting_json_metadata": "{\"profile\":{\"pinned\":\"none\",\"version\":2,\"website\":\"hive.io\",\"profile_image\":\"https://files.peakd.com/file/peakd-hive/hiveio/Jp2YHc6Q-hive-logo.png\",\"cover_image\":\"https://files.peakd.com/file/peakd-hive/hiveio/Xe1TcEBi-hive-banner.png\"}}",
-//		"proxy": "",
-
-//		"last_owner_update": "1970-01-01T00:00:00",
-//		"last_account_update": "2020-11-12T01:20:48",
-//		"created": "2020-03-06T12:22:48",
-//		"mined": false,
-//		"recovery_account": "steempeak",
-//		"last_account_recovery": "1970-01-01T00:00:00",
-//		"reset_account": "null",
-//		"comment_count": 0,
-//		"lifetime_vote_count": 0,
-//		"post_count": 31,
-//		"can_vote": true,
-//		"voting_manabar": {
-//		  "current_mana": "598442432741",
-//		  "last_update_time": 1591297380
-//		},
-//		"downvote_manabar": {
-//		  "current_mana": "149610608184",
-//		  "last_update_time": 1591297380
-//		},
-//		"voting_power": 0,
-//		"balance": "11.682 HIVE",
-//		"savings_balance": "0.000 HIVE",
-//		"hbd_balance": "43.575 HBD",
-//		"hbd_seconds": "0",
-//		"hbd_seconds_last_update": "2020-10-21T02:45:12",
-//		"hbd_last_interest_payment": "2020-10-21T02:45:12",
-//		"savings_hbd_balance": "0.000 HBD",
-//		"savings_hbd_seconds": "0",
-//		"savings_hbd_seconds_last_update": "1970-01-01T00:00:00",
-//		"savings_hbd_last_interest_payment": "1970-01-01T00:00:00",
-//		"savings_withdraw_requests": 0,
-//		"reward_hbd_balance": "0.000 HBD",
-//		"reward_hive_balance": "0.000 HIVE",
-//		"reward_vesting_balance": "0.000000 VESTS",
-//		"reward_vesting_hive": "0.000 HIVE",
-//		"vesting_shares": "598442.432741 VESTS",
-//		"delegated_vesting_shares": "0.000000 VESTS",
-//		"received_vesting_shares": "0.000000 VESTS",
-//		"vesting_withdraw_rate": "0.000000 VESTS",
-//		"post_voting_power": "598442.432741 VESTS",
-//		"next_vesting_withdrawal": "1969-12-31T23:59:59",
-//		"withdrawn": 0,
-//		"to_withdraw": 0,
-//		"withdraw_routes": 0,
-//		"pending_transfers": 0,
-//		"curation_rewards": 0,
-//		"posting_rewards": 604589,
-//		"proxied_vsf_votes": [0, 0, 0, 0],
-//		"witnesses_voted_for": 0,
-//		"last_post": "2021-03-23T18:05:48",
-//		"last_root_post": "2021-03-23T18:05:48",
-//		"last_vote_time": "1970-01-01T00:00:00",
-//		"post_bandwidth": 0,
-//		"pending_claimed_accounts": 0,
-//		"delayed_votes": [
-//		  {
-//			"time": "2021-02-24T05:08:21",
-//			"val": "11550765516955"
-//		  },
-//		  {
-//			"time": "2021-02-26T15:46:06",
-//			"val": "633465684569"
-//		  },
-//		  {
-//			"time": "2021-03-07T17:54:39",
-//			"val": "1000000037683"
-//		  },
-//		  {
-//			"time": "2021-03-16T05:54:33",
-//			"val": "999978763511"
-//		  },
-//		  {
-//			"time": "2021-03-18T06:06:00",
-//			"val": "1000000171317"
-//		  }
-//		],
-//		"vesting_balance": "0.000 HIVE",
-//		"reputation": "88826789432105",
-//		"transfer_history": [],
-//		"market_history": [],
-//		"post_history": [],
-//		"vote_history": [],
-//		"other_history": [],
-//		"witness_votes": [],
-//		"tags_usage": [],
-//		"guest_bloggers": []
-//	  }
-
 // get_accounts
 func (t *Condenser) GetAccounts(args *GetAccountsArgs, reply *[]condenserdb.Account) {
-	data, err := mock.GetMockData[condenserdb.Account]("mock/condenser_api_get_accounts.mock.json")
-	if err != nil {
-		panic(err)
-	}
+	nameMatched := (*args)[0]
+	db := condenserdb.Collection()
 
-	for _, a := range *args {
-		accountName := a[0]
-		account, ok := data[accountName]
-		if !ok {
-			// TODO: handle this error from db
-			// NOTE: if not found, do what?
-			//   - accounts partially exist
-			//   - accounts do not exist at all
-			// from the current implementation we just don't send anything back
-			// (empty result array)
-			fmt.Println("no account found")
-			continue
-		}
-		*reply = append(*reply, account)
+	var err error
+	*reply, err = db.QueryGetAccounts(nameMatched)
+	if err != nil {
+		slog.Error("Failed to query for accounts.", "err", err)
+		return
 	}
 }
 
-//	{
-//		"head_block_number": 0,
-//		"head_block_id": "0000000000000000000000000000000000000000",
-//		"time": "1970-01-01T00:00:00",
-//		"current_witness": "",
-//		"total_pow": "18446744073709551615",
-//		"num_pow_witnesses": 0,
-//		"virtual_supply": "0.000 HIVE",
-//		"current_supply": "0.000 HIVE",
-//		"confidential_supply": "0.000 HIVE",
-//		"current_hbd_supply": "0.000 HIVE",
-//		"confidential_hbd_supply": "0.000 HIVE",
-//		"total_vesting_fund_hive": "0.000 HIVE",
-//		"total_vesting_shares": "0.000 HIVE",
-//		"total_reward_fund_hive": "0.000 HIVE",
-//		"total_reward_shares2": "0",
-//		"pending_rewarded_vesting_shares": "0.000 HIVE",
-//		"pending_rewarded_vesting_hive": "0.000 HIVE",
-//		"hbd_interest_rate": 0,
-//		"hbd_print_rate": 10000,
-//		"maximum_block_size": 0,
-//		"current_aslot": 0,
-//		"recent_slots_filled": "0",
-//		"participation_count": 0,
-//		"last_irreversible_block_num": 0,
-//		"vote_power_reserve_rate": 40
-//	  }
 type GlobalProps struct {
 	HeadBlockNumber              int    `json:"head_block_number"`
 	HeadBlockId                  string `json:"head_block_id"`

@@ -21,12 +21,16 @@ type Condenser struct {
 
 var condenserDb = &Condenser{nil}
 
+func Collection() *Condenser {
+	return condenserDb
+}
+
 func New(d *mimic.MimicDb) *Condenser {
 	condenserDb.Collection = db.NewCollection(d.DbInstance, "condenser")
 	return condenserDb
 }
 
-// Init implements aggregate.Plugin.
+// Condenser implements `aggregate.Plugin`
 func (c *Condenser) Init() error {
 	indexName, err := c.Collection.Indexes().CreateOne(context.TODO(), mongo.IndexModel{
 		Keys:    bson.D{{Key: "name", Value: 1}},
@@ -43,7 +47,6 @@ func (c *Condenser) Init() error {
 	return nil
 }
 
-// Start implements aggregate.Plugin.
 func (c *Condenser) Start() *promise.Promise[any] {
 	data, err := mock.GetMockData[Account]("mock/condenser_api_get_accounts.mock.json")
 	if err != nil {
@@ -68,7 +71,29 @@ func (c *Condenser) Start() *promise.Promise[any] {
 	return utils.PromiseResolve[any](nil)
 }
 
-// Stop implements aggregate.Plugin.
 func (c *Condenser) Stop() error {
 	return nil
+}
+
+// Queries
+
+func (c *Condenser) QueryGetAccounts(namedQueries []string) ([]Account, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+
+	filter := bson.M{"name": bson.M{"$in": namedQueries}}
+
+	cursor, err := c.Find(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	defer cursor.Close(ctx)
+
+	var accounts []Account
+	if err := cursor.All(ctx, &accounts); err != nil {
+		return nil, err
+	}
+
+	return accounts, nil
 }
