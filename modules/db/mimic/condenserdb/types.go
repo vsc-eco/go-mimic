@@ -1,6 +1,10 @@
 package condenserdb
 
-import "go.mongodb.org/mongo-driver/bson/primitive"
+import (
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
 
 type Account struct {
 	ObjectId            primitive.ObjectID `json:"-" bson:"_id,omitempty"`
@@ -91,4 +95,25 @@ type VotingManabar struct {
 type DownvoteManabar struct {
 	CurrentMana    int `json:"current_mana"`
 	LastUpdateTime int `json:"last_update_time"`
+}
+
+type OpenOrder struct {
+	ID         int64     `json:"id"`
+	Created    time.Time `json:"created"`
+	Expiration time.Time `json:"expiration"`
+	Seller     string    `json:"seller"`
+	Orderid    int64     `json:"orderid"`
+	ForSale    int64     `json:"for_sale"`
+	SellPrice  SellPrice `json:"sell_price"`
+}
+
+type SellPrice struct {
+	Base  BasePrice `json:"base"`
+	Quote BasePrice `json:"quote"`
+}
+
+type BasePrice struct {
+	Amount    string `json:"amount"`
+	Precision int64  `json:"precision"`
+	Nai       string `json:"nai"`
 }

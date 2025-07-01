@@ -172,25 +172,10 @@ func (t *Condenser) GetWithdrawRoutes(args [2]string, reply *[]WithdrawRoute) {
 
 }
 
-type OpenOrder struct {
-	Created    string `json:"created"`
-	Expiration string `json:"expiration"`
-	ForSale    int    `json:"for_sale"`
-	Id         int    `json:"id"`
-	OrderId    int    `json:"orderid"`
-	RealPrice  string `json:"real_price"`
-	Rewarded   bool   `json:"rewarded"`
-	SellPrice  struct {
-		Base  string `json:"base"`
-		Quote string `json:"quote"`
-	} `json:"sell_price"`
-	Seller string `json:"seller"`
-}
-
 // get_open_orders
-func (t *Condenser) GetOpenOrders(args *[]string, reply *[]OpenOrder) {
+func (t *Condenser) GetOpenOrders(args *[]string, reply *[]condenserdb.OpenOrder) {
 	//Fake data for now until it gets hooked up with the rest of the mock context
-	reply = &[]OpenOrder{}
+	reply = &[]condenserdb.OpenOrder{}
 }
 
 type ConversionRequest struct {
