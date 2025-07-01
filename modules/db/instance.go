@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"log/slog"
 	"mimic/lib/utils"
 	a "mimic/modules/aggregate"
 
@@ -32,6 +33,7 @@ func NewDbInstance(db Db, name string, opts ...*options.DatabaseOptions) *DbInst
 // Init implements aggregate.Plugin.
 func (d *DbInstance) Init() error {
 	d.Database = d.db.Database(d.name, d.opts...)
+	slog.Info("Initialized database instance.", "database", d.name)
 	return nil
 }
 

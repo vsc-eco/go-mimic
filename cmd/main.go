@@ -6,22 +6,27 @@ import (
 	"mimic/modules/api"
 	"mimic/modules/db"
 	"mimic/modules/db/mimic"
-	"mimic/modules/db/mimic/blocks"
-	"mimic/modules/db/mimic/state"
+	"mimic/modules/db/mimic/blockdb"
+	"mimic/modules/db/mimic/condenserdb"
 )
 
 func main() {
 
 	db := db.New(db.NewDbConfig())
+	db.Init()
 	mimicDb := mimic.New(db)
-	hiveBlocks := blocks.New(mimicDb)
-	stateDb := state.New(mimicDb)
+	mimicDb.Init()
+
+	// hiveBlocks := blockdb.New(mimicDb)
+	// stateDb := state.New(mimicDb)
+	condenserDb := condenserdb.New(mimicDb)
+	blockDb := blockdb.New(mimicDb)
 
 	plugins := []aggregate.Plugin{
-		db,
-		mimicDb,
-		hiveBlocks,
-		stateDb,
+		// hiveBlocks,
+		// stateDb,
+		condenserDb,
+		blockDb,
 	}
 
 	agg := aggregate.New(plugins)
