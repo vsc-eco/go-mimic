@@ -70,6 +70,9 @@ func (c *Condenser) Start() *promise.Promise[any] {
 		slog.Info("Seed collection.", "collection", c.accounts.Name(), "new-record", len(result.InsertedIDs))
 	}
 
+	// seeding orders
+	db.Seed(&[]OpenOrder{}, ctx, c.orders, "condenser_api_orders.mock.json")
+
 	return utils.PromiseResolve[any](nil)
 }
 
