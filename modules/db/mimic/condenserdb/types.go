@@ -115,3 +115,17 @@ type BasePrice struct {
 	Precision int64  `json:"precision"`
 	Nai       string `json:"nai"`
 }
+
+type ConversionRequest struct {
+	ID             int64  `json:"id"`
+	Owner          string `json:"owner"`
+	Requestid      int64  `json:"requestid"`
+	Amount         Amount `json:"amount"`
+	ConversionDate string `json:"conversion_date"`
+}
+
+type Amount struct {
+	Amount    string `json:"amount"`
+	Precision int64  `json:"precision"`
+	Nai       string `json:"nai"`
+}

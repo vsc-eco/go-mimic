@@ -23,3 +23,16 @@ Content-Type: application/json
   "params": ["hiveio"],
   "id": 1
 }
+
+### condenser_api.get_conversion_requests
+
+POST http://localhost:3000 HTTP/1.1
+Accept: application/json
+Content-Type: application/json
+
+{
+  "jsonrpc": "2.0",
+  "method": "condenser_api.get_conversion_requests",
+  "params": [75677],
+  "id": 1
+}

@@ -4,7 +4,7 @@ import (
 	"log/slog"
 	"mimic/mock"
 	"mimic/modules/db/mimic/condenserdb"
-	"strings"
+	"slices"
 )
 
 type TestMethodArgs struct {
@@ -188,34 +188,61 @@ func (t *Condenser) GetOpenOrders(args *[]string, reply *[]condenserdb.OpenOrder
 		return
 	}
 
-	for _, order := range orders {
-		for _, arg := range *args {
-			if strings.EqualFold(arg, order.Seller) {
-				*reply = append(*reply, order)
-			}
-		}
-	}
-}
+	*reply = make([]condenserdb.OpenOrder, 0, len(orders))
 
-type ConversionRequest struct {
+	filterMap(&orders, reply, func(o *condenserdb.OpenOrder) bool {
+		return slices.Contains(*args, o.Seller)
+	})
 }
 
 // get_conversion_requests
 // aka hbd -> hive conversion
-func (t *Condenser) GetConversionRequests(args *[]string, reply *[]ConversionRequest) {
-	//For now send empty response until decided as necessary and implemented
-	*reply = []ConversionRequest{}
+func (t *Condenser) GetConversionRequests(args *[]int, reply *[]condenserdb.ConversionRequest) {
+	var (
+		conversionRequests []condenserdb.ConversionRequest
+		mockFilePath       = "condenser_api_get_conversion_requests.mock.json"
+	)
+
+	if err := mock.GetMockData(&conversionRequests, mockFilePath); err != nil {
+		slog.Error("Failed to read mock data",
+			"mock-json", mockFilePath,
+			"err", err)
+		return
+	}
+
+	*reply = make([]condenserdb.ConversionRequest, 0, len(conversionRequests))
+
+	filterMap(
+		&conversionRequests,
+		reply,
+		func(e *condenserdb.ConversionRequest) bool {
+			return slices.Contains(*args, int(e.ID))
+		},
+	)
+}
+
+// Filters elements from `data` that matches the predicate `filterFunc`, then
+// writes to `buf`
+func filterMap[T any](data, buf *[]T, filterFunc func(*T) bool) {
+	for _, d := range *data {
+		if filterFunc(&d) {
+			*buf = append(*buf, d)
+		}
+	}
 }
 
 // get_collateralized_conversion_requests
 // aka hive -> hbd conversion
-func (t *Condenser) GetCollateralizedConversionRequests(args *[]string, reply *[]ConversionRequest) {
+func (t *Condenser) GetCollateralizedConversionRequests(
+	args *[]string,
+	reply *[]condenserdb.ConversionRequest,
+) {
 	//For now send empty response until decided as necessary and implemented
-	*reply = []ConversionRequest{}
+	*reply = []condenserdb.ConversionRequest{}
 }
 
 // list_proposals
-func (t *Condenser) ListProposals(args *[]interface{}, reply *[]string) {
+func (t *Condenser) ListProposals(args *[]any, reply *[]string) {
 	//For now send empty response until decided as necessary and implemented
 	*reply = []string{}
 }
