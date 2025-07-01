@@ -1,8 +1,6 @@
 package services
 
 import (
-	"fmt"
-	"mimic/mock"
 	"mimic/modules/db/mimic/blockdb"
 
 	"golang.org/x/exp/slog"
@@ -20,22 +18,6 @@ type GetBlockRangeReply struct {
 	Blocks []blockdb.Block `json:"blocks"`
 }
 
-func (BlockAPI) GetBlockRange(args *GetBlockRangeArgs, reply *GetBlockRangeReply) {
-	data, err := mock.GetMockData[GetBlockReply]("mockdata/block_api.get_block.mock.json")
-	if err != nil {
-		panic(err)
-	}
-
-	for i := 0; i <= args.Count; i++ {
-		blockIndex := fmt.Sprintf("%d", args.StartingBlockNum+i)
-		block, ok := data[blockIndex]
-		if !ok {
-			continue
-		}
-		reply.Blocks = append(reply.Blocks, block.Block)
-	}
-}
-
 type GetBlockArgs struct {
 	BlockNum int64 `json:"block_num"`
 }
@@ -45,16 +27,22 @@ type GetBlockReply struct {
 }
 
 func (BlockAPI) GetBlock(args *GetBlockArgs, reply *GetBlockReply) {
-	data, err := mock.GetMockData[GetBlockReply]("mockdata/block_api.get_block.mock.json")
-	if err != nil {
-		panic(err)
-	}
+	blockCollection := blockdb.Collection()
 
-	block, ok := data[fmt.Sprintf("%d", args.BlockNum)]
-	if !ok {
-		slog.Error("Block not found.", "block_num", args.BlockNum)
-	} else {
-		*reply = block
+	if err := blockCollection.QueryBlockByBlockNum(&reply.Block, args.BlockNum); err != nil {
+		slog.Error("Failed to query block by block number.",
+			"block-num", args.BlockNum, "err", err)
+	}
+}
+
+func (BlockAPI) GetBlockRange(args *GetBlockRangeArgs, reply *GetBlockRangeReply) {
+	start := args.StartingBlockNum
+	end := start + args.Count
+
+	blockCollection := blockdb.Collection()
+	if err := blockCollection.QueryBlockByRange(&reply.Blocks, start, end); err != nil {
+		slog.Error("Failed to query block by block range.",
+			"start", start, "end", end, "err", err)
 	}
 }
 

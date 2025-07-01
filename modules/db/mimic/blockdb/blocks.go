@@ -27,6 +27,11 @@ func New(d *mimic.MimicDb) *Blocks {
 	return blockCollection
 }
 
+func Collection() *Blocks {
+	return blockCollection
+}
+
+// Blocks implement `aggregate.Plugin`
 func (d *Blocks) Init() error {
 	indexName, err := d.Indexes().CreateOne(context.TODO(), mongo.IndexModel{
 		Keys:    bson.D{{Key: "block_id", Value: 1}},
@@ -76,12 +81,44 @@ func (d *Blocks) Stop() error {
 	return nil
 }
 
+// Queries
+
+func (b *Blocks) QueryBlockByBlockNum(blockBuf *Block, blockNum int64) error {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+
+	filter := bson.M{"block_num": bson.M{"$eq": blockNum}}
+
+	result := b.FindOne(ctx, filter)
+	if result.Err() != nil {
+		return result.Err()
+	}
+
+	return result.Decode(blockBuf)
+}
+
+func (b *Blocks) QueryBlockByRange(blocks *[]Block, start, end int) error {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+
+	filter := bson.M{"block_num": bson.M{"$gte": start, "$lte": end}}
+
+	cursor, err := b.Find(ctx, filter)
+	if err != nil {
+		return err
+	}
+
+	defer cursor.Close(ctx)
+
+	return cursor.All(ctx, blocks)
+}
+
 func (blks *Blocks) GetBlockRange(startHeight int64, endHeight int64) []HiveBlock {
 	return nil
 }
 
-func (blks *Blocks) GetBlockById(id string) HiveBlock {
-	return HiveBlock{}
+func (blks *Blocks) GetBlockById(id string) Block {
+	return Block{}
 }
 
 func (blks *Blocks) GetBlockByHeight(height int64) (HiveBlock, error) {
