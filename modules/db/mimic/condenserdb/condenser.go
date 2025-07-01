@@ -16,34 +16,36 @@ import (
 )
 
 type Condenser struct {
-	*mongo.Collection
+	accounts *mongo.Collection
+	orders   *mongo.Collection
 }
 
-var condenserDb = &Condenser{nil}
+var condenserDb = &Condenser{nil, nil}
 
 func Collection() *Condenser {
 	return condenserDb
 }
 
 func New(d *mimic.MimicDb) *Condenser {
-	condenserDb.Collection = db.NewCollection(d.DbInstance, "condenser")
+	condenserDb.accounts = db.NewCollection(d.DbInstance, "accounts")
+	condenserDb.orders = db.NewCollection(d.DbInstance, "orders")
 	return condenserDb
 }
 
 // Condenser implements `aggregate.Plugin`
 func (c *Condenser) Init() error {
-	indexName, err := c.Collection.Indexes().CreateOne(context.TODO(), mongo.IndexModel{
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+
+	db.CreateIndex(ctx, c.accounts, mongo.IndexModel{
 		Keys:    bson.D{{Key: "name", Value: 1}},
 		Options: options.Index().SetUnique(true).SetName("name_unique"),
 	})
 
-	if err != nil {
-		slog.Info("Failed to create index.", "collection", c.Name(), "err", err)
-		return err
-	}
-
-	slog.Info("Index created.", "collection", c.Name(), "index", indexName)
-
+	db.CreateIndex(ctx, c.orders, mongo.IndexModel{
+		Keys:    bson.D{{Key: "id", Value: 1}},
+		Options: options.Index().SetUnique(true).SetName("id_unique"),
+	})
 	return nil
 }
 
@@ -61,11 +63,11 @@ func (c *Condenser) Start() *promise.Promise[any] {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
-	result, err := c.InsertMany(ctx, entries)
+	result, err := c.accounts.InsertMany(ctx, entries)
 	if err != nil && !mongo.IsDuplicateKeyError(err) {
 		slog.Error("Failed to seed collection.", "err", err)
 	} else {
-		slog.Info("Seed collection.", "collection", c.Name(), "new-record", len(result.InsertedIDs))
+		slog.Info("Seed collection.", "collection", c.accounts.Name(), "new-record", len(result.InsertedIDs))
 	}
 
 	return utils.PromiseResolve[any](nil)
@@ -83,7 +85,7 @@ func (c *Condenser) QueryGetAccounts(accounts *[]Account, namedQueries []string)
 
 	filter := bson.M{"name": bson.M{"$in": namedQueries}}
 
-	cursor, err := c.Find(ctx, filter)
+	cursor, err := c.accounts.Find(ctx, filter)
 	if err != nil {
 		return err
 	}

@@ -55,3 +55,15 @@ func (db *db) Stop() error {
 	db.cancel()
 	return nil
 }
+
+// some helper functions
+
+func CreateIndex(ctx context.Context, col *mongo.Collection, indexModel mongo.IndexModel) {
+	indexName, err := col.Indexes().CreateOne(ctx, indexModel)
+
+	if err != nil {
+		slog.Info("Failed to create index.", "collection", col.Name(), "err", err)
+	} else {
+		slog.Info("Index created.", "collection", col.Name(), "index", indexName)
+	}
+}
