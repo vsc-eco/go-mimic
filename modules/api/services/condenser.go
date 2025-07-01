@@ -32,9 +32,7 @@ func (t *Condenser) GetAccounts(args *GetAccountsArgs, reply *[]condenserdb.Acco
 	nameMatched := (*args)[0]
 	db := condenserdb.Collection()
 
-	var err error
-	*reply, err = db.QueryGetAccounts(nameMatched)
-	if err != nil {
+	if err := db.QueryGetAccounts(reply, nameMatched); err != nil {
 		slog.Error("Failed to query for accounts.", "err", err)
 		return
 	}

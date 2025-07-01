@@ -77,7 +77,7 @@ func (c *Condenser) Stop() error {
 
 // Queries
 
-func (c *Condenser) QueryGetAccounts(namedQueries []string) ([]Account, error) {
+func (c *Condenser) QueryGetAccounts(accounts *[]Account, namedQueries []string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
@@ -85,15 +85,10 @@ func (c *Condenser) QueryGetAccounts(namedQueries []string) ([]Account, error) {
 
 	cursor, err := c.Find(ctx, filter)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	defer cursor.Close(ctx)
 
-	var accounts []Account
-	if err := cursor.All(ctx, &accounts); err != nil {
-		return nil, err
-	}
-
-	return accounts, nil
+	return cursor.All(ctx, accounts)
 }
