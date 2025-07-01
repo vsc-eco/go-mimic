@@ -1,8 +1,6 @@
 package condenserdb
 
 import (
-	"time"
-
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -99,8 +97,8 @@ type DownvoteManabar struct {
 
 type OpenOrder struct {
 	ID         int64     `json:"id"`
-	Created    time.Time `json:"created"`
-	Expiration time.Time `json:"expiration"`
+	Created    string    `json:"created"`
+	Expiration string    `json:"expiration"`
 	Seller     string    `json:"seller"`
 	Orderid    int64     `json:"orderid"`
 	ForSale    int64     `json:"for_sale"`

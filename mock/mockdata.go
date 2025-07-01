@@ -2,20 +2,15 @@ package mock
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 )
 
-func GetMockData[T any](mockPath string) (map[string]T, error) {
-	// TODO: save to mock data to db
-	f, err := os.ReadFile(mockPath)
+func GetMockData(buf any, mockJsonFile string) error {
+	f, err := os.Open(fmt.Sprintf("mock/%s", mockJsonFile))
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	data := make(map[string]T)
-	if err := json.Unmarshal(f, &data); err != nil {
-		return nil, err
-	}
-
-	return data, nil
+	return json.NewDecoder(f).Decode(buf)
 }

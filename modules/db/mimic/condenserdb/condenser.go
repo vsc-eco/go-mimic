@@ -50,7 +50,8 @@ func (c *Condenser) Init() error {
 }
 
 func (c *Condenser) Start() *promise.Promise[any] {
-	data, err := mock.GetMockData[Account]("mock/condenser_api_get_accounts.mock.json")
+	data := make(map[string]Account)
+	err := mock.GetMockData(&data, "condenser_api_get_accounts.mock.json")
 	if err != nil {
 		panic(err)
 	}
@@ -69,9 +70,6 @@ func (c *Condenser) Start() *promise.Promise[any] {
 	} else {
 		slog.Info("Seed collection.", "collection", c.accounts.Name(), "new-record", len(result.InsertedIDs))
 	}
-
-	// seeding orders
-	db.Seed(&[]OpenOrder{}, ctx, c.orders, "condenser_api_orders.mock.json")
 
 	return utils.PromiseResolve[any](nil)
 }

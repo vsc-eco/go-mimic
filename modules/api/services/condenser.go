@@ -2,7 +2,9 @@ package services
 
 import (
 	"log/slog"
+	"mimic/mock"
 	"mimic/modules/db/mimic/condenserdb"
+	"strings"
 )
 
 type TestMethodArgs struct {
@@ -174,8 +176,25 @@ func (t *Condenser) GetWithdrawRoutes(args [2]string, reply *[]WithdrawRoute) {
 
 // get_open_orders
 func (t *Condenser) GetOpenOrders(args *[]string, reply *[]condenserdb.OpenOrder) {
-	//Fake data for now until it gets hooked up with the rest of the mock context
-	reply = &[]condenserdb.OpenOrder{}
+	var (
+		orders       []condenserdb.OpenOrder
+		mockFilePath = "condenser_api_orders.mock.json"
+	)
+
+	if err := mock.GetMockData(&orders, mockFilePath); err != nil {
+		slog.Error("Failed to read mock data",
+			"mock-json", mockFilePath,
+			"err", err)
+		return
+	}
+
+	for _, order := range orders {
+		for _, arg := range *args {
+			if strings.EqualFold(arg, order.Seller) {
+				*reply = append(*reply, order)
+			}
+		}
+	}
 }
 
 type ConversionRequest struct {
