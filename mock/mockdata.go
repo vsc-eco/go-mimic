@@ -6,8 +6,8 @@ import (
 	"os"
 )
 
-func GetMockData(buf any, mockJsonFile string) error {
-	f, err := os.Open(fmt.Sprintf("mock/%s", mockJsonFile))
+func GetMockData(buf any, apiMethod string) error {
+	f, err := os.Open(fmt.Sprintf("mock/%s.json", apiMethod))
 	if err != nil {
 		return err
 	}

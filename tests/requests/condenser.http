@@ -36,3 +36,16 @@ Content-Type: application/json
   "params": [75677],
   "id": 1
 }
+
+### condenser_api.get_withdraw_routes
+
+POST http://localhost:3000 HTTP/1.1
+Accept: application/json
+Content-Type: application/json
+
+{
+  "jsonrpc": "2.0",
+  "method": "condenser_api.get_withdraw_routes",
+  "params": ["hiveio", "incoming"],
+  "id": 1
+}

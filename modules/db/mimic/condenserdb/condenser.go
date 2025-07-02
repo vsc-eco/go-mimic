@@ -51,7 +51,7 @@ func (c *Condenser) Init() error {
 
 func (c *Condenser) Start() *promise.Promise[any] {
 	data := make(map[string]Account)
-	err := mock.GetMockData(&data, "condenser_api_get_accounts.mock.json")
+	err := mock.GetMockData(&data, "condenser_api.get_accounts")
 	if err != nil {
 		panic(err)
 	}

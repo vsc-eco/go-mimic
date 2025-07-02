@@ -3,8 +3,9 @@ package services
 import (
 	"log/slog"
 	"mimic/mock"
-	"mimic/modules/db/mimic/condenserdb"
+	cdb "mimic/modules/db/mimic/condenserdb"
 	"slices"
+	"strings"
 )
 
 type TestMethodArgs struct {
@@ -30,9 +31,9 @@ func (t *Condenser) GetBlock(args *TestMethodArgs, reply *TestMethodReply) error
 type GetAccountsArgs [][]string
 
 // get_accounts
-func (t *Condenser) GetAccounts(args *GetAccountsArgs, reply *[]condenserdb.Account) {
+func (t *Condenser) GetAccounts(args *GetAccountsArgs, reply *[]cdb.Account) {
 	nameMatched := (*args)[0]
-	db := condenserdb.Collection()
+	db := cdb.Collection()
 
 	if err := db.QueryGetAccounts(reply, nameMatched); err != nil {
 		slog.Error("Failed to query for accounts.", "err", err)
@@ -151,34 +152,54 @@ func (t *Condenser) GetRewardFund(args *[]string, reply *RewardFund) {
 	reply.CurationRewardCurve = "quadratic"
 }
 
-type WithdrawRoute struct {
-	Id          int    `json:"id"`
-	FromAccount string `json:"from_account"`
-	ToAccount   string `json:"to_account"`
-	Percent     int    `json:"percent"`
-	AutoVest    bool   `json:"auto_vest"`
-}
-
 // get_withdraw_routes
-func (t *Condenser) GetWithdrawRoutes(args [2]string, reply *[]WithdrawRoute) {
-	//Fake data for now until it gets hooked up with the rest of the mock context
-	reply = &[]WithdrawRoute{
-		{
-			Id:          1,
-			FromAccount: "test",
-			ToAccount:   "test2",
-			Percent:     50,
-			AutoVest:    true,
-		},
+func (t *Condenser) GetWithdrawRoutes(args *[]string, reply *[]cdb.WithdrawRoute) {
+	var (
+		routes      []cdb.WithdrawRoute
+		mockApiData = "condenser_api.get_withdraw_routes"
+	)
+
+	if err := mock.GetMockData(&routes, mockApiData); err != nil {
+		slog.Error("Failed to read mock data",
+			"mock-json", mockApiData,
+			"err", err)
+		return
 	}
 
+	*reply = make([]cdb.WithdrawRoute, 0, len(routes))
+
+	user, transferDirection := (*args)[0], (*args)[1]
+
+	allowedDirection := []string{"all", "incoming", "outgoing"}
+	if !slices.Contains(allowedDirection, transferDirection) {
+		slog.Warn("Invalid transfer direction query, allowed values: incoming, outgoing, all")
+		return
+	}
+
+	filterMap(&routes, reply, func(r *cdb.WithdrawRoute) bool {
+		switch transferDirection {
+
+		case "incoming":
+			return strings.EqualFold(user, r.ToAccount)
+
+		case "outgoing":
+			return strings.EqualFold(user, r.FromAccount)
+
+		case "all":
+			return strings.EqualFold(user, r.FromAccount) ||
+				strings.EqualFold(user, r.ToAccount)
+
+		default:
+			panic("invalid transfer direction")
+		}
+	})
 }
 
 // get_open_orders
-func (t *Condenser) GetOpenOrders(args *[]string, reply *[]condenserdb.OpenOrder) {
+func (t *Condenser) GetOpenOrders(args *[]string, reply *[]cdb.OpenOrder) {
 	var (
-		orders       []condenserdb.OpenOrder
-		mockFilePath = "condenser_api_orders.mock.json"
+		orders       []cdb.OpenOrder
+		mockFilePath = "condenser_api.get_open_orders"
 	)
 
 	if err := mock.GetMockData(&orders, mockFilePath); err != nil {
@@ -188,19 +209,19 @@ func (t *Condenser) GetOpenOrders(args *[]string, reply *[]condenserdb.OpenOrder
 		return
 	}
 
-	*reply = make([]condenserdb.OpenOrder, 0, len(orders))
+	*reply = make([]cdb.OpenOrder, 0, len(orders))
 
-	filterMap(&orders, reply, func(o *condenserdb.OpenOrder) bool {
+	filterMap(&orders, reply, func(o *cdb.OpenOrder) bool {
 		return slices.Contains(*args, o.Seller)
 	})
 }
 
 // get_conversion_requests
 // aka hbd -> hive conversion
-func (t *Condenser) GetConversionRequests(args *[]int, reply *[]condenserdb.ConversionRequest) {
+func (t *Condenser) GetConversionRequests(args *[]int, reply *[]cdb.ConversionRequest) {
 	var (
-		conversionRequests []condenserdb.ConversionRequest
-		mockFilePath       = "condenser_api_get_conversion_requests.mock.json"
+		conversionRequests []cdb.ConversionRequest
+		mockFilePath       = "condenser_api.get_conversion_requests"
 	)
 
 	if err := mock.GetMockData(&conversionRequests, mockFilePath); err != nil {
@@ -210,12 +231,12 @@ func (t *Condenser) GetConversionRequests(args *[]int, reply *[]condenserdb.Conv
 		return
 	}
 
-	*reply = make([]condenserdb.ConversionRequest, 0, len(conversionRequests))
+	*reply = make([]cdb.ConversionRequest, 0, len(conversionRequests))
 
 	filterMap(
 		&conversionRequests,
 		reply,
-		func(e *condenserdb.ConversionRequest) bool {
+		func(e *cdb.ConversionRequest) bool {
 			return slices.Contains(*args, int(e.ID))
 		},
 	)
@@ -237,10 +258,10 @@ func filterMap[T any](data, buf *[]T, filterFunc func(*T) bool) {
 // https://developers.hive.io/apidefinitions/#condenser_api.get_collateralized_conversion_requests
 func (t *Condenser) GetCollateralizedConversionRequests(
 	args *[]string,
-	reply *[]condenserdb.ConversionRequest,
+	reply *[]cdb.ConversionRequest,
 ) {
 	//For now send empty response until decided as necessary and implemented
-	*reply = []condenserdb.ConversionRequest{}
+	*reply = []cdb.ConversionRequest{}
 }
 
 // list_proposals

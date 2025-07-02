@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"log/slog"
 	"net/http"
 	"reflect"
@@ -92,7 +91,8 @@ func (s *APIServer) Init() {
 		}
 
 		if err := json.Unmarshal(paramsJSON, args.Interface()); err != nil {
-			fmt.Println("args", args, err)
+			slog.Error("Failed to decode params",
+				"raw", paramsJSON, "err", err)
 			http.Error(w, "failed to decode params", http.StatusBadRequest)
 			return
 		}

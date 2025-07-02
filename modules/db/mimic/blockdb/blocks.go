@@ -48,7 +48,7 @@ func (d *Blocks) Init() error {
 }
 
 func (d *Blocks) Start() *promise.Promise[any] {
-	dataJson, err := os.ReadFile("mock/block_api.get_block.mock.json")
+	dataJson, err := os.ReadFile("mock/block_api.get_block.json")
 	if err != nil {
 		panic(err)
 	}

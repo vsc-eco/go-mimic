@@ -129,3 +129,11 @@ type Amount struct {
 	Precision int64  `json:"precision"`
 	Nai       string `json:"nai"`
 }
+
+type WithdrawRoute struct {
+	ID          int64  `json:"id"`
+	FromAccount string `json:"from_account"`
+	ToAccount   string `json:"to_account"`
+	Percent     int64  `json:"percent"`
+	AutoVest    bool   `json:"auto_vest"`
+}
