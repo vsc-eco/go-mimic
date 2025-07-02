@@ -41,63 +41,17 @@ func (t *Condenser) GetAccounts(args *GetAccountsArgs, reply *[]cdb.Account) {
 	}
 }
 
-type GlobalProps struct {
-	HeadBlockNumber              int    `json:"head_block_number"`
-	HeadBlockId                  string `json:"head_block_id"`
-	Time                         string `json:"time"`
-	CurrentWitness               string `json:"current_witness"`
-	TotalPow                     string `json:"total_pow"`
-	NumPowWitnesses              int    `json:"num_pow_witnesses"`
-	VirtualSupply                string `json:"virtual_supply"`
-	CurrentSupply                string `json:"current_supply"`
-	ConfidentialSupply           string `json:"confidential_supply"`
-	CurrentHbdSupply             string `json:"current_hbd_supply"`
-	ConfidentialHbdSupply        string `json:"confidential_hbd_supply"`
-	TotalVestingFundHive         string `json:"total_vesting_fund_hive"`
-	TotalVestingShares           string `json:"total_vesting_shares"`
-	TotalRewardFundHive          string `json:"total_reward_fund_hive"`
-	TotalRewardShares2           string `json:"total_reward_shares2"`
-	PendingRewardedVestingShares string `json:"pending_rewarded_vesting_shares"`
-	PendingRewardedVestingHive   string `json:"pending_rewarded_vesting_hive"`
-	HbdInterestRate              int    `json:"hbd_interest_rate"`
-	HbdPrintRate                 int    `json:"hbd_print_rate"`
-	MaximumBlockSize             int    `json:"maximum_block_size"`
-	CurrentAslot                 int    `json:"current_aslot"`
-	RecentSlotsFilled            string `json:"recent_slots_filled"`
-	ParticipationCount           int    `json:"participation_count"`
-	LastIrreversibleBlockNum     int    `json:"last_irreversible_block_num"`
-	VotePowerReserveRate         int    `json:"vote_power_reserve_rate"`
-}
-
 // get_dynamic_global_properties
-func (t *Condenser) GetDynamicGlobalProperties(args *[]string, reply *GlobalProps) {
-	//Fake data for now until it gets hooked up with the rest of the mock context
-	reply.HeadBlockNumber = 100
-	reply.HeadBlockId = "1234567890"
-	reply.Time = "2023-10-01T00:00:00"
-	reply.CurrentWitness = "test"
-	reply.TotalPow = "0"
-	reply.NumPowWitnesses = 0
-	reply.VirtualSupply = "100.000 HIVE"
-	reply.CurrentSupply = "100.000 HIVE"
-	reply.ConfidentialSupply = "0.000 HIVE"
-	reply.CurrentHbdSupply = "100.000 HBD"
-	reply.ConfidentialHbdSupply = "0.000 HBD"
-	reply.TotalVestingFundHive = "100.000 HIVE"
-	reply.TotalVestingShares = "100.000 HIVE"
-	reply.TotalRewardFundHive = "100.000 HIVE"
-	reply.TotalRewardShares2 = "0"
-	reply.PendingRewardedVestingShares = "0.000 HIVE"
-	reply.PendingRewardedVestingHive = "0.000 HIVE"
-	reply.HbdInterestRate = 0
-	reply.HbdPrintRate = 10000
-	reply.MaximumBlockSize = 1000000
-	reply.CurrentAslot = 0
-	reply.RecentSlotsFilled = "0"
-	reply.ParticipationCount = 0
-	reply.LastIrreversibleBlockNum = 100
-	reply.VotePowerReserveRate = 40
+func (t *Condenser) GetDynamicGlobalProperties(args *[]string, reply *cdb.GlobalProperties) {
+	var (
+		mockApiData = "condenser_api.get_dynamic_global_properties"
+	)
 
+	if err := mock.GetMockData(reply, mockApiData); err != nil {
+		slog.Error("Failed to read mock data",
+			"mock-json", mockApiData, "err", err)
+		return
+	}
 }
 
 // get_current_median_history_price

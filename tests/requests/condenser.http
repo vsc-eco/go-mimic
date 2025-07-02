@@ -75,3 +75,16 @@ Content-Type: application/json
   "params": [],
   "id": 1
 }
+
+### condenser_api.get_dynamic_global_properties
+
+POST http://localhost:3000 HTTP/1.1
+Accept: application/json
+Content-Type: application/json
+
+{
+  "jsonrpc": "2.0",
+  "method": "condenser_api.get_dynamic_global_properties",
+  "params": [],
+  "id": 1
+}
