@@ -62,3 +62,16 @@ Content-Type: application/json
   "params": ["alice"],
   "id": 1
 }
+
+### condenser_api.get_current_median_history_price
+
+POST http://localhost:3000 HTTP/1.1
+Accept: application/json
+Content-Type: application/json
+
+{
+  "jsonrpc": "2.0",
+  "method": "condenser_api.get_current_median_history_price",
+  "params": [],
+  "id": 1
+}

@@ -150,3 +150,8 @@ type RewardFund struct {
 	AuthorRewardCurve      string `json:"author_reward_curve"`
 	CurationRewardCurve    string `json:"curation_reward_curve"`
 }
+
+type MedianPrice struct {
+	Base  string `json:"base"`
+	Quote string `json:"quote"`
+}

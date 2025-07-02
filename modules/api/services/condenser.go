@@ -100,13 +100,8 @@ func (t *Condenser) GetDynamicGlobalProperties(args *[]string, reply *GlobalProp
 
 }
 
-type MediumPrice struct {
-	Base  string `json:"base"`
-	Quote string `json:"quote"`
-}
-
 // get_current_median_history_price
-func (t *Condenser) GetCurrentMedianHistoryPrice(args *[]string, reply *MediumPrice) {
+func (t *Condenser) GetCurrentMedianHistoryPrice(args *[]string, reply *cdb.MedianPrice) {
 	//Fake data for now until it gets hooked up with the rest of the mock context
 	reply.Base = "100.000 SBD"
 	reply.Quote = "100.000 HIVE"
