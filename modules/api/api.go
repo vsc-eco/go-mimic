@@ -30,7 +30,7 @@ func (s *APIServer) RegisterMethod(alias, methodName string, servc any) ServiceM
 		panic("method not found")
 	}
 
-	slog.Info("Method registered.",
+	slog.Debug("Method registered.",
 		"methodName", methodName,
 		"methodNum", servType.NumMethod())
 

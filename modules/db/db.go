@@ -65,9 +65,9 @@ func CreateIndex(ctx context.Context, col *mongo.Collection, indexModel mongo.In
 	indexName, err := col.Indexes().CreateOne(ctx, indexModel)
 
 	if err != nil {
-		slog.Info("Failed to create index.", "collection", col.Name(), "err", err)
+		slog.Error("Failed to create index.", "collection", col.Name(), "err", err)
 	} else {
-		slog.Info("Index created.", "collection", col.Name(), "index", indexName)
+		slog.Debug("Index created.", "collection", col.Name(), "index", indexName)
 	}
 }
 
@@ -86,14 +86,14 @@ func Seed[T any](
 	f, err := os.Open(fmt.Sprintf("mock/%s", mockJsonFile))
 	if err != nil {
 		seedError = err
-		goto seedErrHandling
+		goto seedLogging
 	}
 
 	defer f.Close()
 
 	if err := json.NewDecoder(f).Decode(buf); err != nil {
 		seedError = err
-		goto seedErrHandling
+		goto seedLogging
 	}
 
 	docs = make([]any, len(*buf))
@@ -103,7 +103,7 @@ func Seed[T any](
 
 	result, seedError = collection.InsertMany(ctx, docs)
 
-seedErrHandling:
+seedLogging:
 	if seedError != nil {
 		slog.Error(
 			"Failed to seed collection.",
@@ -112,7 +112,7 @@ seedErrHandling:
 			"err", seedError,
 		)
 	} else {
-		slog.Info(
+		slog.Debug(
 			"Seeded collection.",
 			"collection", collection.Name(),
 			"mock-file", mockJsonFile,

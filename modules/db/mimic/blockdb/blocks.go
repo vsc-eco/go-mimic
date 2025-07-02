@@ -39,11 +39,11 @@ func (d *Blocks) Init() error {
 	})
 
 	if err != nil {
-		slog.Info("Failed to create index.", "collection", d.Name(), "err", err)
+		slog.Error("Failed to create index.", "collection", d.Name(), "err", err)
 		return err
 	}
 
-	slog.Info("Index created.", "collection", d.Name(), "index", indexName)
+	slog.Debug("Index created.", "collection", d.Name(), "index", indexName)
 	return nil
 }
 
@@ -71,7 +71,7 @@ func (d *Blocks) Start() *promise.Promise[any] {
 	if err != nil && !mongo.IsDuplicateKeyError(err) {
 		slog.Error("Failed to seed.", "collection", d.Name(), "err", err)
 	} else {
-		slog.Info("Seed collection.", "collection", d.Name(), "new-record", len(result.InsertedIDs))
+		slog.Debug("Seed collection.", "collection", d.Name(), "new-record", len(result.InsertedIDs))
 	}
 
 	return utils.PromiseResolve[any](d)

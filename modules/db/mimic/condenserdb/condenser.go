@@ -68,7 +68,7 @@ func (c *Condenser) Start() *promise.Promise[any] {
 	if err != nil && !mongo.IsDuplicateKeyError(err) {
 		slog.Error("Failed to seed collection.", "err", err)
 	} else {
-		slog.Info("Seed collection.", "collection", c.accounts.Name(), "new-record", len(result.InsertedIDs))
+		slog.Debug("Seed collection.", "collection", c.accounts.Name(), "new-record", len(result.InsertedIDs))
 	}
 
 	return utils.PromiseResolve[any](nil)
