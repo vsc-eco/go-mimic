@@ -183,3 +183,13 @@ type GlobalProperties struct {
 	LastIrreversibleBlockNum     int64  `json:"last_irreversible_block_num"`
 	VotePowerReserveRate         int64  `json:"vote_power_reserve_rate"`
 }
+
+type Transaction struct {
+	ObjectID       primitive.ObjectID `json:"-" bson:"_id,omitempty"`
+	RefBlockNum    int64              `json:"ref_block_num"`
+	RefBlockPrefix int64              `json:"ref_block_prefix"`
+	Expiration     string             `json:"expiration"`
+	Operations     []any              `json:"operations"`
+	Extensions     []any              `json:"extensions"`
+	Signatures     []any              `json:"signatures"`
+}
