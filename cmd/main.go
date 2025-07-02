@@ -2,13 +2,37 @@ package main
 
 import (
 	"context"
+	"log/slog"
+	"mimic/lib/utils"
 	"mimic/modules/aggregate"
 	"mimic/modules/api"
 	"mimic/modules/db"
 	"mimic/modules/db/mimic"
 	"mimic/modules/db/mimic/blockdb"
 	"mimic/modules/db/mimic/condenserdb"
+	"os"
 )
+
+func init() {
+	level := slog.LevelInfo
+
+	switch utils.EnvOrDefault("LOG_LEVEL", "info") {
+	case "debug":
+		level = slog.LevelDebug
+	case "info":
+		level = slog.LevelInfo
+	case "warn", "warning":
+		level = slog.LevelWarn
+	case "error":
+		level = slog.LevelError
+	}
+
+	handler := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+		Level: level,
+	})
+
+	slog.SetDefault(slog.New(handler))
+}
 
 func main() {
 
