@@ -233,6 +233,8 @@ func filterMap[T any](data, buf *[]T, filterFunc func(*T) bool) {
 
 // get_collateralized_conversion_requests
 // aka hive -> hbd conversion
+// NOTE: docs is empty right now...
+// https://developers.hive.io/apidefinitions/#condenser_api.get_collateralized_conversion_requests
 func (t *Condenser) GetCollateralizedConversionRequests(
 	args *[]string,
 	reply *[]condenserdb.ConversionRequest,
