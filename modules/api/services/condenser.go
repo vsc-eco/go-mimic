@@ -112,44 +112,30 @@ func (t *Condenser) GetCurrentMedianHistoryPrice(args *[]string, reply *MediumPr
 	reply.Quote = "100.000 HIVE"
 }
 
-//	{
-//	  "id": 0,
-//	  "name": "",
-//	  "reward_balance": "0.000 HIVE",
-//	  "recent_claims": "0",
-//	  "last_update": "1970-01-01T00:00:00",
-//	  "content_constant": "0",
-//	  "percent_curation_rewards": 0,
-//	  "percent_content_rewards": 0,
-//	  "author_reward_curve": "quadratic",
-//	  "curation_reward_curve": "34723648"
-//	}
-type RewardFund struct {
-	Id                  int    `json:"id"`
-	Name                string `json:"name"`
-	RewardBalance       string `json:"reward_balance"`
-	RecentClaims        string `json:"recent_claims"`
-	LastUpdate          string `json:"last_update"`
-	ContentConstant     string `json:"content_constant"`
-	PercentCuration     int    `json:"percent_curation_rewards"`
-	PercentContent      int    `json:"percent_content_rewards"`
-	AuthorRewardCurve   string `json:"author_reward_curve"`
-	CurationRewardCurve string `json:"curation_reward_curve"`
-}
-
 // get_reward_fund
-func (t *Condenser) GetRewardFund(args *[]string, reply *RewardFund) {
-	//Fake data for now until it gets hooked up with the rest of the mock context
-	reply.Id = 1
-	reply.Name = "test"
-	reply.RewardBalance = "100.000 HIVE"
-	reply.RecentClaims = "1000"
-	reply.LastUpdate = "2023-10-01T00:00:00"
-	reply.ContentConstant = "1000"
-	reply.PercentCuration = 50
-	reply.PercentContent = 50
-	reply.AuthorRewardCurve = "linear"
-	reply.CurationRewardCurve = "quadratic"
+func (t *Condenser) GetRewardFund(args *[]string, reply *cdb.RewardFund) {
+	if len(*args) == 0 {
+		return
+	}
+
+	var (
+		rewards     []cdb.RewardFund
+		mockApiData = "condenser_api.get_reward_fund"
+	)
+
+	if err := mock.GetMockData(&rewards, mockApiData); err != nil {
+		slog.Error("Failed to read mock data",
+			"mock-json", mockApiData, "err", err)
+		return
+	}
+
+	// just grab the first matched of name
+	for _, reward := range rewards {
+		if strings.EqualFold(reward.Name, (*args)[0]) {
+			*reply = reward
+			return
+		}
+	}
 }
 
 // get_withdraw_routes
@@ -161,8 +147,7 @@ func (t *Condenser) GetWithdrawRoutes(args *[]string, reply *[]cdb.WithdrawRoute
 
 	if err := mock.GetMockData(&routes, mockApiData); err != nil {
 		slog.Error("Failed to read mock data",
-			"mock-json", mockApiData,
-			"err", err)
+			"mock-json", mockApiData, "err", err)
 		return
 	}
 
@@ -204,8 +189,7 @@ func (t *Condenser) GetOpenOrders(args *[]string, reply *[]cdb.OpenOrder) {
 
 	if err := mock.GetMockData(&orders, mockFilePath); err != nil {
 		slog.Error("Failed to read mock data",
-			"mock-json", mockFilePath,
-			"err", err)
+			"mock-json", mockFilePath, "err", err)
 		return
 	}
 
@@ -226,8 +210,7 @@ func (t *Condenser) GetConversionRequests(args *[]int, reply *[]cdb.ConversionRe
 
 	if err := mock.GetMockData(&conversionRequests, mockFilePath); err != nil {
 		slog.Error("Failed to read mock data",
-			"mock-json", mockFilePath,
-			"err", err)
+			"mock-json", mockFilePath, "err", err)
 		return
 	}
 

@@ -107,8 +107,8 @@ func (s *APIServer) Init() {
 
 		res := map[string]any{
 			"jsonrpc": "2.0",
-			"result":  reply.Interface(),
 			"id":      req["id"],
+			"result":  reply.Interface(),
 		}
 
 		w.Header().Set("Content-Type", "application/json")

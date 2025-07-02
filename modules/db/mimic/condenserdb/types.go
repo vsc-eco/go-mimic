@@ -137,3 +137,16 @@ type WithdrawRoute struct {
 	Percent     int64  `json:"percent"`
 	AutoVest    bool   `json:"auto_vest"`
 }
+
+type RewardFund struct {
+	ID                     int64  `json:"id"`
+	Name                   string `json:"name"`
+	RewardBalance          string `json:"reward_balance"`
+	RecentClaims           string `json:"recent_claims"`
+	LastUpdate             string `json:"last_update"`
+	ContentConstant        string `json:"content_constant"`
+	PercentCurationRewards int64  `json:"percent_curation_rewards"`
+	PercentContentRewards  int64  `json:"percent_content_rewards"`
+	AuthorRewardCurve      string `json:"author_reward_curve"`
+	CurationRewardCurve    string `json:"curation_reward_curve"`
+}

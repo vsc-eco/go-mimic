@@ -49,3 +49,16 @@ Content-Type: application/json
   "params": ["hiveio", "incoming"],
   "id": 1
 }
+
+### condenser_api.get_reward_fund
+
+POST http://localhost:3000 HTTP/1.1
+Accept: application/json
+Content-Type: application/json
+
+{
+  "jsonrpc": "2.0",
+  "method": "condenser_api.get_reward_fund",
+  "params": ["alice"],
+  "id": 1
+}
