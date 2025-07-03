@@ -13,7 +13,10 @@ import (
 	"os"
 )
 
+var mimicDb *mimic.MimicDb
+
 func init() {
+	// initialize logging
 	level := slog.LevelInfo
 
 	switch utils.EnvOrDefault("LOG_LEVEL", "info") {
@@ -32,15 +35,16 @@ func init() {
 	})
 
 	slog.SetDefault(slog.New(handler))
+
+	// initialize database
+	db := db.New(db.NewDbConfig())
+	db.Init()
+
+	mimicDb = mimic.New(db)
+	mimicDb.Init()
 }
 
 func main() {
-
-	db := db.New(db.NewDbConfig())
-	db.Init()
-	mimicDb := mimic.New(db)
-	mimicDb.Init()
-
 	// hiveBlocks := blockdb.New(mimicDb)
 	// stateDb := state.New(mimicDb)
 	condenserDb := condenserdb.New(mimicDb)
