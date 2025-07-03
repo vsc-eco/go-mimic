@@ -1,0 +1,48 @@
+[
+  {
+    "account": "hiveio",
+    "delegated_rc": 0,
+    "max_rc": 29203616537,
+    "max_rc_creation_adjustment": {
+      "amount": "5879302741",
+      "nai": "@@000000037",
+      "precision": 6
+    },
+    "rc_manabar": {
+      "current_mana": 28848763116,
+      "last_update_time": 1746924309
+    },
+    "received_delegated_rc": 0
+  },
+  {
+    "account": "alice",
+    "delegated_rc": 0,
+    "max_rc": 135630143570,
+    "max_rc_creation_adjustment": {
+      "amount": "2020748973",
+      "nai": "@@000000037",
+      "precision": 6
+    },
+    "rc_manabar": {
+      "current_mana": 135375191366,
+      "last_update_time": 1550731380
+    },
+    "received_delegated_rc": 0
+  },
+  {
+    "account": "bob",
+    "delegated_rc": 0,
+    "max_rc": 12059334508,
+    "max_rc_creation_adjustment": {
+      "amount": "2020748973",
+      "nai": "@@000000037",
+      "precision": 6
+    },
+    "rc_manabar": {
+      "current_mana": 12059334508,
+      "last_update_time": 1678473387
+    },
+    "received_delegated_rc": 0
+  }
+]
+

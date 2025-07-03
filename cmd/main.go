@@ -10,6 +10,7 @@ import (
 	"mimic/modules/db/mimic"
 	"mimic/modules/db/mimic/blockdb"
 	"mimic/modules/db/mimic/condenserdb"
+	"mimic/modules/db/mimic/rcdb"
 	"os"
 )
 
@@ -49,12 +50,14 @@ func main() {
 	// stateDb := state.New(mimicDb)
 	condenserDb := condenserdb.New(mimicDb)
 	blockDb := blockdb.New(mimicDb)
+	rcDb := rcdb.New(mimicDb)
 
 	plugins := []aggregate.Plugin{
 		// hiveBlocks,
 		// stateDb,
 		condenserDb,
 		blockDb,
+		rcDb,
 	}
 
 	agg := aggregate.New(plugins)

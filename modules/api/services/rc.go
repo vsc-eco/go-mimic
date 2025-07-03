@@ -1,45 +1,38 @@
 package services
 
-type RcApi struct {
-}
+import (
+	"context"
+	"mimic/modules/db/mimic/rcdb"
+	"time"
 
-type rcArgs struct {
-	Accounts []string `json:"accounts"`
-}
+	"golang.org/x/exp/slog"
+)
+
+type RcAccount = rcdb.RCAccount
+
+type RcApi struct{}
+
+type rcArgs []string
 
 type RcReply struct {
 	RcAccounts []RcAccount `json:"rc_accounts"`
 }
 
-type RcAccount struct {
-	Account                 string `json:"account"`
-	DelegatedRc             int    `json:"delegated_rc"`
-	MaxRc                   int    `json:"max_rc"`
-	MaxRcCreationAdjustment string `json:"max_rc_creation_adjustment"`
-	RcManabar               struct {
-		CurrentMana    int `json:"current_mana"`
-		LastUpdateTime int `json:"last_update_time"`
-	} `json:"rc_manabar"`
-}
+func (api *RcApi) FindRcAccounts(args *rcArgs, reply *RcReply) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
 
-func (api RcApi) FindRcAccounts(args *rcArgs, reply *RcReply) {
-	for _, account := range args.Accounts {
-		reply.RcAccounts = append(reply.RcAccounts, RcAccount{
-			Account:                 account,
-			DelegatedRc:             0,
-			MaxRc:                   1000000000,
-			MaxRcCreationAdjustment: "1000000000 VESTS",
-			RcManabar: struct {
-				CurrentMana    int "json:\"current_mana\""
-				LastUpdateTime int "json:\"last_update_time\""
-			}{
-				CurrentMana:    1000000000,
-				LastUpdateTime: 1550731380,
-			},
-		})
+	reply.RcAccounts = make([]RcAccount, 0)
+
+	err := rcdb.Collection().
+		QueryFindRcAccounts(ctx, &reply.RcAccounts, *args)
+
+	if err != nil {
+		slog.Error("Failed to queries for Rc Account.",
+			"queries", args, "err", err)
 	}
 }
 
-func (api RcApi) Expose(mr RegisterMethod) {
+func (api *RcApi) Expose(mr RegisterMethod) {
 	mr("find_rc_accounts", "FindRcAccounts")
 }

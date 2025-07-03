@@ -38,7 +38,7 @@ Not all transactions are supported on Mimic. However, we have implemented the fo
 - `condenser_api.get_conversion_requests` ✅
 - `condenser_api.get_collateralized_conversion_requests` 🚧
 - `condenser_api.get_accounts` ✅
-- `rc_api.find_rc_accounts` 🚧
+- `rc_api.find_rc_accounts` ✅
 - `/health` ✅
 
 **Mimic APIs**
