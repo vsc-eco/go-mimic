@@ -10,23 +10,6 @@ Mimic is an end to end network simulation tool for the Hive blockchain. It provi
 - Update account metadata or public keys via mock transactions
 - Perform real world transactions against a mock environment, respecting signature validation, balance validation, and transaction expiration
 
-## Getting Started
-
-In case you don't have the binaries installed locally. A `compose.yml` file is
-given for MongoDB, exposing the default port `27017`.
-
-```sh
-docker compose up
-```
-
-Start the mimic server
-
-```sh
-go run ./cmd/main.go
-# or with Makefile
-make
-```
-
 ### Supported Transactions
 
 Not all transactions are supported on Mimic. However, we have implemented the following transactions deemed most important for application development:
@@ -76,3 +59,29 @@ Not all transactions are supported on Mimic. However, we have implemented the fo
 - Mimic may have not implemented all error types or may not be able to simulate all types of error returned from Hive RPC API.
 - Mimic does not simulate resource credits
 - Mimic does not simulate Hive Power
+
+## Getting Started
+
+### Using Makefile
+
+Run the following to start the Mongo Docker container and the mimic server:
+
+```sh
+make dev
+```
+
+> **Note:** This is for development only and requires [`air`](https://github.com/air-verse/air) for hot-reloading.
+
+### Manual Setup
+
+If you don't have the necessary binaries installed, use the provided `compose.yml` to start MongoDB (default port `27017`):
+
+```sh
+docker compose up -
+```
+
+Then, start the mimic server:
+
+```sh
+go run ./cmd/main.go
+```
