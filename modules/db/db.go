@@ -8,6 +8,7 @@ import (
 	"mimic/lib/utils"
 	a "mimic/modules/aggregate"
 	"os"
+	"time"
 
 	"github.com/chebyrash/promise"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -31,7 +32,7 @@ func New(conf DbConfig) *db {
 }
 
 func (db *db) Init() error {
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	db.cancel = cancel
 
 	uri := db.conf.Get().DbURI

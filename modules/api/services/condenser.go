@@ -1,11 +1,13 @@
 package services
 
 import (
+	"context"
 	"log/slog"
 	"mimic/mock"
 	cdb "mimic/modules/db/mimic/condenserdb"
 	"slices"
 	"strings"
+	"time"
 )
 
 type TestMethodArgs struct {
@@ -18,8 +20,8 @@ type TestMethodReply struct {
 	Sum     int `json:"sum"`
 	Product int `json:"product"`
 }
-type Condenser struct {
-}
+
+type Condenser struct{}
 
 func (t *Condenser) GetBlock(args *TestMethodArgs, reply *TestMethodReply) error {
 	// Fill reply pointer to send the data back
@@ -35,7 +37,10 @@ func (t *Condenser) GetAccounts(args *GetAccountsArgs, reply *[]cdb.Account) {
 	nameMatched := (*args)[0]
 	db := cdb.Collection()
 
-	if err := db.QueryGetAccounts(reply, nameMatched); err != nil {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+
+	if err := db.QueryGetAccounts(ctx, reply, nameMatched); err != nil {
 		slog.Error("Failed to query for accounts.", "err", err)
 		return
 	}
@@ -174,16 +179,6 @@ func (t *Condenser) GetConversionRequests(args *[]int, reply *[]cdb.ConversionRe
 	)
 }
 
-// Filters elements from `data` that matches the predicate `filterFunc`, then
-// writes to `buf`
-func filterMap[T any](data, buf *[]T, filterFunc func(*T) bool) {
-	for _, d := range *data {
-		if filterFunc(&d) {
-			*buf = append(*buf, d)
-		}
-	}
-}
-
 // get_collateralized_conversion_requests
 // aka hive -> hbd conversion
 // NOTE: docs is empty right now...
@@ -202,6 +197,55 @@ func (t *Condenser) ListProposals(args *[]any, reply *[]string) {
 	*reply = []string{}
 }
 
+// broadcast_transaction
+func (c *Condenser) BroadcastTransaction(
+	args *[]cdb.Transaction,
+	reply *map[string]any,
+) {
+	go c.BroadcastTransactionSynchronous(args, &BroadcastTransactionResponse{})
+	*reply = make(map[string]any)
+}
+
+// broadcast_transaction_synchronous
+type BroadcastTransactionResponse struct {
+	ID       string `json:"id"`
+	BlockNum int64  `json:"block_num"`
+	TrxNum   int64  `json:"trx_num"`
+	Expired  bool   `json:"expired"`
+}
+
+func (c *Condenser) BroadcastTransactionSynchronous(
+	args *[]cdb.Transaction,
+	reply *BroadcastTransactionResponse,
+) {
+	// simulating long request
+	duration := time.Millisecond * 2000
+	time.Sleep(duration)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+
+	trx := (*args)[0]
+
+	trxNum, err := cdb.Collection().NewTransaction(ctx, &trx)
+	if err != nil {
+		slog.Error(
+			"Failed to create transaction(s).",
+			"transactions", args,
+			"errro", err,
+		)
+
+		return
+	}
+
+	*reply = BroadcastTransactionResponse{
+		ID:       trx.ObjectID.Hex(),
+		BlockNum: trx.RefBlockNum,
+		TrxNum:   trxNum,
+		Expired:  false,
+	}
+}
+
 func (t *Condenser) Expose(rm RegisterMethod) {
 	rm("get_block", "GetBlock")
 	rm("get_dynamic_global_properties", "GetDynamicGlobalProperties")
@@ -213,4 +257,16 @@ func (t *Condenser) Expose(rm RegisterMethod) {
 	rm("get_collateralized_conversion_requests", "GetCollateralizedConversionRequests")
 	rm("get_accounts", "GetAccounts")
 	rm("list_proposals", "ListProposals")
+	rm("broadcast_transaction", "BroadcastTransaction")
+	rm("broadcast_transaction_synchronous", "BroadcastTransactionSynchronous")
+}
+
+// Filters elements from `data` that matches the predicate `filterFunc`, then
+// writes to `buf`
+func filterMap[T any](data, buf *[]T, filterFunc func(*T) bool) {
+	for _, d := range *data {
+		if filterFunc(&d) {
+			*buf = append(*buf, d)
+		}
+	}
 }
