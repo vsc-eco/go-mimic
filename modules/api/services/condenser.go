@@ -202,11 +202,7 @@ func (c *Condenser) BroadcastTransaction(
 	args *[]cdb.Transaction,
 	reply *map[string]any,
 ) {
-	go func(args *[]cdb.Transaction) {
-		buf := &BroadcastTransactionResponse{}
-		c.BroadcastTransactionSynchronous(args, &buf)
-	}(args)
-
+	go c.BroadcastTransactionSynchronous(args, &BroadcastTransactionResponse{})
 	*reply = make(map[string]any)
 }
 
@@ -220,7 +216,7 @@ type BroadcastTransactionResponse struct {
 
 func (c *Condenser) BroadcastTransactionSynchronous(
 	args *[]cdb.Transaction,
-	reply **BroadcastTransactionResponse,
+	reply *BroadcastTransactionResponse,
 ) {
 	// simulating long request
 	duration := time.Millisecond * 2000
@@ -242,7 +238,7 @@ func (c *Condenser) BroadcastTransactionSynchronous(
 		return
 	}
 
-	*reply = &BroadcastTransactionResponse{
+	*reply = BroadcastTransactionResponse{
 		ID:       trx.ObjectID.Hex(),
 		BlockNum: trx.RefBlockNum,
 		TrxNum:   trxNum,
