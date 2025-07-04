@@ -49,6 +49,7 @@ func (s *APIServer) RegisterService(service services.ServiceHandler, name string
 		s.rpcRoutes[name+"."+alias] = &serv
 		s.services[name] = reflect.ValueOf(service)
 	})
+	slog.Debug("Service registered.", "service", name)
 }
 
 func (s *APIServer) Init() {
@@ -146,11 +147,13 @@ func (s *APIServer) Start() {
 	rcService := &services.RcApi{}
 	blockApi := &services.BlockAPI{}
 	accountHistoryApi := &services.AccountHistoryApi{}
+	accountByKeyAPI := &services.AccountByKeyAPI{}
 
 	s.RegisterService(service, "condenser_api")
 	s.RegisterService(rcService, "rc_api")
 	s.RegisterService(blockApi, "block_api")
 	s.RegisterService(accountHistoryApi, "account_history_api")
+	s.RegisterService(accountByKeyAPI, "account_by_key")
 
 	port := "3000"
 	slog.Info("APIServer accepting requests.", "port", port)
