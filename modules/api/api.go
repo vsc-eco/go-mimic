@@ -153,7 +153,7 @@ func (s *APIServer) Start() {
 	s.RegisterService(rcService, "rc_api")
 	s.RegisterService(blockApi, "block_api")
 	s.RegisterService(accountHistoryApi, "account_history_api")
-	s.RegisterService(accountByKeyAPI, "account_by_key")
+	s.RegisterService(accountByKeyAPI, "account_by_key_api")
 
 	port := "3000"
 	slog.Info("APIServer accepting requests.", "port", port)
