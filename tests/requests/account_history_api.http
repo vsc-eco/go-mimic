@@ -1,0 +1,16 @@
+### account_history_api.get_ops_in_block
+
+POST http://localhost:3000 HTTP/1.1
+Accept: application/json
+Content-Type: application/json
+
+{
+  "jsonrpc": "2.0",
+  "method": "account_history_api.get_ops_in_block",
+  "params": {
+    "block_num": 0,
+    "only_virtual": true,
+    "include_reversible": true
+  },
+  "id": 1
+}

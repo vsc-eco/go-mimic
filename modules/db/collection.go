@@ -1,45 +1,16 @@
 package db
 
 import (
-	"mimic/lib/utils"
-	a "mimic/modules/aggregate"
-
-	"github.com/chebyrash/promise"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type Collection struct {
-	*mongo.Collection
-
-	db   *DbInstance
-	name string
-	opts []*options.CollectionOptions
-}
-
-var _ a.Plugin = &Collection{}
-
-func NewCollection(db *DbInstance, name string, opts ...*options.CollectionOptions) *Collection {
-	return &Collection{
-		nil,
-		db,
-		name,
-		opts,
+func NewCollection(db *DbInstance, name string, opts ...*options.CollectionOptions) *mongo.Collection {
+	defaultOpts := []*options.CollectionOptions{
+		options.Collection().SetBSONOptions(&options.BSONOptions{
+			UseJSONStructTags: true,
+		}),
 	}
-}
-
-// Init implements aggregate.Plugin.
-func (c *Collection) Init() error {
-	c.Collection = c.db.Collection(c.name, c.opts...)
-	return nil
-}
-
-// Start implements aggregate.Plugin.
-func (c *Collection) Start() *promise.Promise[any] {
-	return utils.PromiseResolve[any](nil)
-}
-
-// Stop implements aggregate.Plugin.
-func (c *Collection) Stop() error {
-	return nil
+	defaultOpts = append(defaultOpts, opts...)
+	return db.Collection(name, defaultOpts...)
 }

@@ -7,12 +7,12 @@ Content-Type: application/json
 {
   "jsonrpc": "2.0",
   "method": "block_api.get_block",
-  "params": { "block_num": 3 },
+  "params": { "block_num": 1 },
   "id": 3
 }
 
-
 ### block_api.get_block_range
+
 POST http://localhost:3000 HTTP/1.1
 
 {

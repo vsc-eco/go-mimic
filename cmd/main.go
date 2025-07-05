@@ -2,32 +2,72 @@ package main
 
 import (
 	"context"
+	"log/slog"
+	"mimic/lib/utils"
 	"mimic/modules/aggregate"
 	"mimic/modules/api"
 	"mimic/modules/db"
 	"mimic/modules/db/mimic"
-	"mimic/modules/db/mimic/blocks"
-	"mimic/modules/db/mimic/state"
+	"mimic/modules/db/mimic/accountdb"
+	"mimic/modules/db/mimic/blockdb"
+	"mimic/modules/db/mimic/condenserdb"
+	"mimic/modules/db/mimic/transactiondb"
+	"os"
+	"time"
 )
 
-func main() {
+var mimicDb *mimic.MimicDb
 
+func init() {
+	// initialize logging
+	level := slog.LevelInfo
+
+	switch utils.EnvOrDefault("LOG_LEVEL", "info") {
+	case "debug":
+		level = slog.LevelDebug
+	case "info":
+		level = slog.LevelInfo
+	case "warn", "warning":
+		level = slog.LevelWarn
+	case "error":
+		level = slog.LevelError
+	}
+
+	handler := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+		Level: level,
+	})
+
+	slog.SetDefault(slog.New(handler))
+
+	// initialize database
 	db := db.New(db.NewDbConfig())
-	mimicDb := mimic.New(db)
-	hiveBlocks := blocks.New(mimicDb)
-	stateDb := state.New(mimicDb)
+	db.Init()
+
+	mimicDb = mimic.New(db)
+	mimicDb.Init()
+}
+
+func main() {
+	// hiveBlocks := blockdb.New(mimicDb)
+	// stateDb := state.New(mimicDb)
+	condenserDb := condenserdb.New(mimicDb)
+	blockDb := blockdb.New(mimicDb)
 
 	plugins := []aggregate.Plugin{
-		db,
-		mimicDb,
-		hiveBlocks,
-		stateDb,
+		// hiveBlocks,
+		// stateDb,
+		condenserDb,
+		blockDb,
+		accountdb.New(mimicDb),
+		transactiondb.New(mimicDb),
 	}
 
 	agg := aggregate.New(plugins)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
 
 	agg.Init()
-	agg.Start().Await(context.Background())
+	agg.Start().Await(ctx)
 	defer agg.Stop()
 
 	router := api.NewAPIServer()

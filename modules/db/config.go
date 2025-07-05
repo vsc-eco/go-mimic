@@ -21,7 +21,7 @@ type DbConfig = *dbConfigStruct
 
 func NewDbConfig() DbConfig {
 	return &dbConfigStruct{config.New(dbConfig{
-		DbURI: utils.EnvOrDefault("MONGO_URL", "mongodb://localhost:27017"),
+		DbURI: utils.EnvOrDefault("MONGO_URL", "mongodb://root:example@localhost:27017"),
 	}, nil)}
 }
 
