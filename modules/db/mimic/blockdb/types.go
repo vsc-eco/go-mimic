@@ -1,7 +1,13 @@
 package blockdb
 
+import (
+	"encoding/json"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
+
 type Block struct {
-	BlockNum              uint64   `json:"-" bson:"block_num"`
+	BlockNum              uint64   `json:"-"                       bson:"block_num"`
 	BlockId               string   `json:"block_id"`
 	Previous              string   `json:"previous"`
 	Timestamp             string   `json:"timestamp"`
@@ -15,12 +21,21 @@ type Block struct {
 }
 
 type HiveBlock struct {
-	BlockId        string `json:"block_id" bson:"id"`
-	Witness        string `json:"witness" bson:"witness"`
-	Timestamp      string `json:"timestamp" bson:"ts"`
-	MerkleRoot     string `json:"merkle_root" bson:"merkle_root"`
-	Previous       string `json:"previous" bson:"previous"`
-	TransactionIds string `json:"transaction_ids" bson:"tx_ids"`
+	ObjectID primitive.ObjectID `json:"-" bson:"_id,omitempty"`
 
-	Height int64 `json:"height" bson:"height"`
+	BlockID          string `json:"block_id"`
+	Previous         string `json:"previous"`
+	Timestamp        string `json:"timestamp"`
+	Witness          string `json:"witness"`
+	MerkleRoot       string `json:"transaction_merkle_root"`
+	Extensions       []any  `json:"extensions"`
+	WitnessSignature string `json:"witness_signature"`
+	Transactions     []any  `json:"transactions"`
+	TransactionIDs   []any  `json:"transaction_ids"`
+	SigningKey       string `json:"signing_key"`
+}
+
+func (h *HiveBlock) String() string {
+	jsonString, _ := json.MarshalIndent(h, "", "  ")
+	return string(jsonString)
 }

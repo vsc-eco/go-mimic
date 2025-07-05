@@ -39,7 +39,13 @@ func (d *Blocks) Init() error {
 	})
 
 	if err != nil {
-		slog.Error("Failed to create index.", "collection", d.Name(), "err", err)
+		slog.Error(
+			"Failed to create index.",
+			"collection",
+			d.Name(),
+			"err",
+			err,
+		)
 		return err
 	}
 
@@ -113,7 +119,10 @@ func (b *Blocks) QueryBlockByRange(blocks *[]Block, start, end int) error {
 	return cursor.All(ctx, blocks)
 }
 
-func (blks *Blocks) GetBlockRange(startHeight int64, endHeight int64) []HiveBlock {
+func (blks *Blocks) GetBlockRange(
+	startHeight int64,
+	endHeight int64,
+) []HiveBlock {
 	return nil
 }
 
@@ -140,11 +149,23 @@ func (blks *Blocks) GetBlockByHeight(height int64) (HiveBlock, error) {
 }
 
 func (blks *Blocks) InsertBlock(blockData HiveBlock) {
-	ctx := context.Background()
-	options := options.FindOneAndUpdate().SetUpsert(true)
-	blks.FindOneAndUpdate(ctx, bson.M{
-		"height": blockData.Height,
-	}, bson.M{
-		"$set": blockData,
-	}, options)
+	/*
+		ctx := context.Background()
+		options := options.FindOneAndUpdate().SetUpsert(true)
+		blks.FindOneAndUpdate(ctx, bson.M{
+			"height": blockData.Height,
+		}, bson.M{
+			"$set": blockData,
+		}, options)
+	*/
+}
+
+func (b *Blocks) FindLatestBlock(ctx context.Context, buf *HiveBlock) error {
+	// since timestamp is encoded with mongodb, can query for lastest inserted ID
+	queryOpts := options.FindOne()
+	queryOpts.Sort = bson.M{"_id": -1}
+
+	result := blockCollection.FindOne(ctx, bson.M{}, queryOpts)
+
+	return result.Decode(buf)
 }
