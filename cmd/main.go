@@ -11,6 +11,7 @@ import (
 	"mimic/modules/db/mimic/accountdb"
 	"mimic/modules/db/mimic/blockdb"
 	"mimic/modules/db/mimic/condenserdb"
+	"mimic/modules/db/mimic/transactiondb"
 	"os"
 	"time"
 )
@@ -51,14 +52,14 @@ func main() {
 	// stateDb := state.New(mimicDb)
 	condenserDb := condenserdb.New(mimicDb)
 	blockDb := blockdb.New(mimicDb)
-	accountDb := accountdb.New(mimicDb)
 
 	plugins := []aggregate.Plugin{
 		// hiveBlocks,
 		// stateDb,
 		condenserDb,
 		blockDb,
-		accountDb,
+		accountdb.New(mimicDb),
+		transactiondb.New(mimicDb),
 	}
 
 	agg := aggregate.New(plugins)

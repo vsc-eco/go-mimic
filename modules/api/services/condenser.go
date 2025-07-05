@@ -6,6 +6,7 @@ import (
 	"mimic/mock"
 	"mimic/modules/db/mimic/accountdb"
 	cdb "mimic/modules/db/mimic/condenserdb"
+	"mimic/modules/db/mimic/transactiondb"
 	"slices"
 	"strings"
 	"time"
@@ -222,7 +223,7 @@ func (t *Condenser) ListProposals(args *[]any, reply *[]string) {
 
 // broadcast_transaction
 func (c *Condenser) BroadcastTransaction(
-	args *[]cdb.Transaction,
+	args *[]transactiondb.Transaction,
 	reply *map[string]any,
 ) {
 	go c.BroadcastTransactionSynchronous(args, &BroadcastTransactionResponse{})
@@ -238,7 +239,7 @@ type BroadcastTransactionResponse struct {
 }
 
 func (c *Condenser) BroadcastTransactionSynchronous(
-	args *[]cdb.Transaction,
+	args *[]transactiondb.Transaction,
 	reply *BroadcastTransactionResponse,
 ) {
 	// simulating long request
@@ -250,7 +251,7 @@ func (c *Condenser) BroadcastTransactionSynchronous(
 
 	trx := (*args)[0]
 
-	trxNum, err := cdb.Collection().NewTransaction(ctx, &trx)
+	trxNum, err := transactiondb.Collection().NewTransaction(ctx, &trx)
 	if err != nil {
 		slog.Error(
 			"Failed to create transaction(s).",
