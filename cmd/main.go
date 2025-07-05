@@ -8,9 +8,11 @@ import (
 	"mimic/modules/api"
 	"mimic/modules/db"
 	"mimic/modules/db/mimic"
+	"mimic/modules/db/mimic/accountdb"
 	"mimic/modules/db/mimic/blockdb"
 	"mimic/modules/db/mimic/condenserdb"
 	"os"
+	"time"
 )
 
 var mimicDb *mimic.MimicDb
@@ -49,18 +51,22 @@ func main() {
 	// stateDb := state.New(mimicDb)
 	condenserDb := condenserdb.New(mimicDb)
 	blockDb := blockdb.New(mimicDb)
+	accountDb := accountdb.New(mimicDb)
 
 	plugins := []aggregate.Plugin{
 		// hiveBlocks,
 		// stateDb,
 		condenserDb,
 		blockDb,
+		accountDb,
 	}
 
 	agg := aggregate.New(plugins)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
 
 	agg.Init()
-	agg.Start().Await(context.Background())
+	agg.Start().Await(ctx)
 	defer agg.Stop()
 
 	router := api.NewAPIServer()

@@ -62,11 +62,21 @@ func (db *db) Stop() error {
 
 // some helper functions
 
-func CreateIndex(ctx context.Context, col *mongo.Collection, indexModel mongo.IndexModel) {
+func CreateIndex(
+	ctx context.Context,
+	col *mongo.Collection,
+	indexModel mongo.IndexModel,
+) {
 	indexName, err := col.Indexes().CreateOne(ctx, indexModel)
 
 	if err != nil {
-		slog.Error("Failed to create index.", "collection", col.Name(), "err", err)
+		slog.Error(
+			"Failed to create index.",
+			"collection",
+			col.Name(),
+			"err",
+			err,
+		)
 	} else {
 		slog.Debug("Index created.", "collection", col.Name(), "index", indexName)
 	}
@@ -105,7 +115,7 @@ func Seed[T any](
 	result, seedError = collection.InsertMany(ctx, docs)
 
 seedLogging:
-	if seedError != nil {
+	if seedError != nil && !mongo.IsDuplicateKeyError(seedError) {
 		slog.Error(
 			"Failed to seed collection.",
 			"collection", collection.Name(),
@@ -117,7 +127,7 @@ seedLogging:
 			"Seeded collection.",
 			"collection", collection.Name(),
 			"mock-file", mockJsonFile,
-			"inserted-ids", result.InsertedIDs,
+			"new-record", len(result.InsertedIDs),
 		)
 	}
 }

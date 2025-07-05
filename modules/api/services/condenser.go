@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"mimic/mock"
+	"mimic/modules/db/mimic/accountdb"
 	cdb "mimic/modules/db/mimic/condenserdb"
 	"slices"
 	"strings"
@@ -23,7 +24,10 @@ type TestMethodReply struct {
 
 type Condenser struct{}
 
-func (t *Condenser) GetBlock(args *TestMethodArgs, reply *TestMethodReply) error {
+func (t *Condenser) GetBlock(
+	args *TestMethodArgs,
+	reply *TestMethodReply,
+) error {
 	// Fill reply pointer to send the data back
 	reply.Sum = args.A + args.B + 1
 	reply.Product = args.A * args.B
@@ -33,21 +37,29 @@ func (t *Condenser) GetBlock(args *TestMethodArgs, reply *TestMethodReply) error
 type GetAccountsArgs [][]string
 
 // get_accounts
-func (t *Condenser) GetAccounts(args *GetAccountsArgs, reply *[]cdb.Account) {
+func (t *Condenser) GetAccounts(
+	args *GetAccountsArgs,
+	reply *[]accountdb.Account,
+) {
 	nameMatched := (*args)[0]
-	db := cdb.Collection()
+	db := accountdb.Collection()
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
-	if err := db.QueryGetAccounts(ctx, reply, nameMatched); err != nil {
+	*reply = make([]accountdb.Account, 0)
+
+	if err := db.QueryAccountByNames(ctx, reply, nameMatched); err != nil {
 		slog.Error("Failed to query for accounts.", "err", err)
 		return
 	}
 }
 
 // get_dynamic_global_properties
-func (t *Condenser) GetDynamicGlobalProperties(args *[]string, reply *cdb.GlobalProperties) {
+func (t *Condenser) GetDynamicGlobalProperties(
+	args *[]string,
+	reply *cdb.GlobalProperties,
+) {
 	var (
 		mockApiData = "condenser_api.get_dynamic_global_properties"
 	)
@@ -60,7 +72,10 @@ func (t *Condenser) GetDynamicGlobalProperties(args *[]string, reply *cdb.Global
 }
 
 // get_current_median_history_price
-func (t *Condenser) GetCurrentMedianHistoryPrice(args *[]string, reply *cdb.MedianPrice) {
+func (t *Condenser) GetCurrentMedianHistoryPrice(
+	args *[]string,
+	reply *cdb.MedianPrice,
+) {
 	//Fake data for now until it gets hooked up with the rest of the mock context
 	reply.Base = "100.000 SBD"
 	reply.Quote = "100.000 HIVE"
@@ -93,7 +108,10 @@ func (t *Condenser) GetRewardFund(args *[]string, reply *cdb.RewardFund) {
 }
 
 // get_withdraw_routes
-func (t *Condenser) GetWithdrawRoutes(args *[]string, reply *[]cdb.WithdrawRoute) {
+func (t *Condenser) GetWithdrawRoutes(
+	args *[]string,
+	reply *[]cdb.WithdrawRoute,
+) {
 	var (
 		routes      []cdb.WithdrawRoute
 		mockApiData = "condenser_api.get_withdraw_routes"
@@ -111,7 +129,9 @@ func (t *Condenser) GetWithdrawRoutes(args *[]string, reply *[]cdb.WithdrawRoute
 
 	allowedDirection := []string{"all", "incoming", "outgoing"}
 	if !slices.Contains(allowedDirection, transferDirection) {
-		slog.Warn("Invalid transfer direction query, allowed values: incoming, outgoing, all")
+		slog.Warn(
+			"Invalid transfer direction query, allowed values: incoming, outgoing, all",
+		)
 		return
 	}
 
@@ -156,7 +176,10 @@ func (t *Condenser) GetOpenOrders(args *[]string, reply *[]cdb.OpenOrder) {
 
 // get_conversion_requests
 // aka hbd -> hive conversion
-func (t *Condenser) GetConversionRequests(args *[]int, reply *[]cdb.ConversionRequest) {
+func (t *Condenser) GetConversionRequests(
+	args *[]int,
+	reply *[]cdb.ConversionRequest,
+) {
 	var (
 		conversionRequests []cdb.ConversionRequest
 		mockFilePath       = "condenser_api.get_conversion_requests"
@@ -254,7 +277,10 @@ func (t *Condenser) Expose(rm RegisterMethod) {
 	rm("get_withdraw_routes", "GetWithdrawRoutes")
 	rm("get_open_orders", "GetOpenOrders")
 	rm("get_conversion_requests", "GetConversionRequests")
-	rm("get_collateralized_conversion_requests", "GetCollateralizedConversionRequests")
+	rm(
+		"get_collateralized_conversion_requests",
+		"GetCollateralizedConversionRequests",
+	)
 	rm("get_accounts", "GetAccounts")
 	rm("list_proposals", "ListProposals")
 	rm("broadcast_transaction", "BroadcastTransaction")
