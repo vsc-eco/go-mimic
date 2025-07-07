@@ -7,6 +7,7 @@ import (
 	"mimic/modules/db/mimic/accountdb"
 	cdb "mimic/modules/db/mimic/condenserdb"
 	"mimic/modules/db/mimic/transactiondb"
+	"mimic/modules/producers"
 	"slices"
 	"strings"
 	"time"
@@ -226,48 +227,21 @@ func (c *Condenser) BroadcastTransaction(
 	args *[]transactiondb.Transaction,
 	reply *map[string]any,
 ) {
-	go c.BroadcastTransactionSynchronous(args, &BroadcastTransactionResponse{})
+	go c.BroadcastTransactionSynchronous(
+		args,
+		&producers.BroadcastTransactionResponse{},
+	)
 	*reply = make(map[string]any)
 }
 
 // broadcast_transaction_synchronous
-type BroadcastTransactionResponse struct {
-	ID       string `json:"id"`
-	BlockNum int64  `json:"block_num"`
-	TrxNum   int64  `json:"trx_num"`
-	Expired  bool   `json:"expired"`
-}
-
 func (c *Condenser) BroadcastTransactionSynchronous(
 	args *[]transactiondb.Transaction,
-	reply *BroadcastTransactionResponse,
+	reply *producers.BroadcastTransactionResponse,
 ) {
-	// simulating long request
-	duration := time.Millisecond * 2000
-	time.Sleep(duration)
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer cancel()
-
 	trx := (*args)[0]
-
-	trxNum, err := transactiondb.Collection().NewTransaction(ctx, &trx)
-	if err != nil {
-		slog.Error(
-			"Failed to create transaction(s).",
-			"transactions", args,
-			"errro", err,
-		)
-
-		return
-	}
-
-	*reply = BroadcastTransactionResponse{
-		ID:       trx.ObjectID.Hex(),
-		BlockNum: trx.RefBlockNum,
-		TrxNum:   trxNum,
-		Expired:  false,
-	}
+	req := producers.BroadcastTransaction(trx)
+	*reply = req.Response()
 }
 
 func (t *Condenser) Expose(rm RegisterMethod) {

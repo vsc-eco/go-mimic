@@ -12,6 +12,7 @@ import (
 	"mimic/modules/db/mimic/blockdb"
 	"mimic/modules/db/mimic/condenserdb"
 	"mimic/modules/db/mimic/transactiondb"
+	"mimic/modules/producers"
 	"os"
 	"time"
 )
@@ -52,6 +53,7 @@ func main() {
 	// stateDb := state.New(mimicDb)
 	condenserDb := condenserdb.New(mimicDb)
 	blockDb := blockdb.New(mimicDb)
+	producer := producers.New()
 
 	plugins := []aggregate.Plugin{
 		// hiveBlocks,
@@ -60,6 +62,7 @@ func main() {
 		blockDb,
 		accountdb.New(mimicDb),
 		transactiondb.New(mimicDb),
+		producer,
 	}
 
 	agg := aggregate.New(plugins)
@@ -69,6 +72,10 @@ func main() {
 	agg.Init()
 	agg.Start().Await(ctx)
 	defer agg.Stop()
+
+	interval := time.Second * 3
+	slog.Debug("Producing blocks.", "interval", interval)
+	go producer.Produce(interval)
 
 	router := api.NewAPIServer()
 	router.Init()

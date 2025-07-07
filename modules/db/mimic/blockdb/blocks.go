@@ -2,12 +2,10 @@ package blockdb
 
 import (
 	"context"
-	"encoding/json"
 	"log/slog"
 	"mimic/lib/utils"
 	"mimic/modules/db"
 	"mimic/modules/db/mimic"
-	"os"
 	"time"
 
 	"github.com/chebyrash/promise"
@@ -54,32 +52,16 @@ func (d *Blocks) Init() error {
 }
 
 func (d *Blocks) Start() *promise.Promise[any] {
-	dataJson, err := os.ReadFile("mock/block_api.get_block.json")
-	if err != nil {
-		panic(err)
-	}
-
 	var blocks []Block
-	if err := json.Unmarshal(dataJson, &blocks); err != nil {
-		panic(err)
-	}
-
-	entries := make([]any, len(blocks))
-	for i, block := range blocks {
-		block.BlockNum = uint64(i + 1)
-		entries[i] = block
-	}
-
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
-	result, err := d.InsertMany(ctx, entries)
-	if err != nil && !mongo.IsDuplicateKeyError(err) {
-		slog.Error("Failed to seed.", "collection", d.Name(), "err", err)
-	} else {
-		slog.Debug("Seed collection.", "collection", d.Name(), "new-record", len(result.InsertedIDs))
-	}
-
+	db.Seed(
+		&blocks,
+		ctx,
+		blockCollection.Collection,
+		"block_api.get_block.json",
+	)
 	return utils.PromiseResolve[any](d)
 }
 
@@ -163,9 +145,12 @@ func (blks *Blocks) InsertBlock(blockData HiveBlock) {
 func (b *Blocks) FindLatestBlock(ctx context.Context, buf *HiveBlock) error {
 	// since timestamp is encoded with mongodb, can query for lastest inserted ID
 	queryOpts := options.FindOne()
-	queryOpts.Sort = bson.M{"_id": -1}
+	queryOpts.SetSort(bson.M{"_id": -1})
 
-	result := blockCollection.FindOne(ctx, bson.M{}, queryOpts)
+	result := blockCollection.FindOne(ctx, bson.D{}, queryOpts)
+	if result.Err() != nil {
+		return result.Err()
+	}
 
-	return result.Decode(buf)
+	return result.Decode(&buf)
 }

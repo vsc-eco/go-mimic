@@ -2,6 +2,7 @@ package blockdb
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -37,5 +38,5 @@ type HiveBlock struct {
 
 func (h *HiveBlock) String() string {
 	jsonString, _ := json.MarshalIndent(h, "", "  ")
-	return string(jsonString)
+	return fmt.Sprintf("[%s] %s", h.ObjectID.String(), string(jsonString))
 }
