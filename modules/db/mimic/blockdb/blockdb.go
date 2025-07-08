@@ -14,23 +14,31 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type Blocks struct {
+type BlockQuery interface {
+	QueryBlockByBlockNum(*HiveBlock, int64) error
+	QueryBlockByRange(blocks *[]HiveBlock, start, end int) error
+}
+
+type blockCollection struct {
 	*mongo.Collection
 }
 
-var blockCollection = &Blocks{}
+var collection BlockQuery = nil
 
-func New(d *mimic.MimicDb) *Blocks {
-	blockCollection.Collection = db.NewCollection(d.DbInstance, "blocks")
-	return blockCollection
+func New(d *mimic.MimicDb) *blockCollection {
+	collection = &blockCollection{
+		db.NewCollection(d.DbInstance, "blocks"),
+	}
+
+	return collection.(*blockCollection)
 }
 
-func Collection() *Blocks {
-	return blockCollection
+func Collection() *blockCollection {
+	return collection.(*blockCollection)
 }
 
 // Blocks implement `aggregate.Plugin`
-func (d *Blocks) Init() error {
+func (d *blockCollection) Init() error {
 	indexName, err := d.Indexes().CreateOne(context.TODO(), mongo.IndexModel{
 		Keys:    bson.D{{Key: "block_id", Value: 1}},
 		Options: options.Index().SetUnique(true).SetName("block_id_unique"),
@@ -51,7 +59,7 @@ func (d *Blocks) Init() error {
 	return nil
 }
 
-func (d *Blocks) Start() *promise.Promise[any] {
+func (d *blockCollection) Start() *promise.Promise[any] {
 	var blocks []HiveBlock
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
@@ -59,63 +67,30 @@ func (d *Blocks) Start() *promise.Promise[any] {
 	db.Seed(
 		&blocks,
 		ctx,
-		blockCollection.Collection,
+		collection.(*blockCollection).Collection,
 		"block_api.get_block.json",
 	)
 	return utils.PromiseResolve[any](d)
 }
 
-func (d *Blocks) Stop() error {
+func (d *blockCollection) Stop() error {
 	return nil
 }
 
 // Queries
 
-func (b *Blocks) QueryBlockByBlockNum(
-	blockBuf *HiveBlock,
-	blockNum int64,
-) error {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer cancel()
-
-	filter := bson.M{"block_num": bson.M{"$eq": blockNum}}
-
-	result := b.FindOne(ctx, filter)
-	if result.Err() != nil {
-		return result.Err()
-	}
-
-	return result.Decode(blockBuf)
-}
-
-func (b *Blocks) QueryBlockByRange(blocks *[]HiveBlock, start, end int) error {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer cancel()
-
-	filter := bson.M{"block_num": bson.M{"$gte": start, "$lte": end}}
-
-	cursor, err := b.Find(ctx, filter)
-	if err != nil {
-		return err
-	}
-
-	defer cursor.Close(ctx)
-
-	return cursor.All(ctx, blocks)
-}
-
-func (blks *Blocks) GetBlockRange(
+func (blks *blockCollection) GetBlockRange(
 	startHeight int64,
 	endHeight int64,
 ) []HiveBlock {
 	return nil
 }
 
-func (blks *Blocks) GetBlockById(id string) HiveBlock {
+func (blks *blockCollection) GetBlockById(id string) HiveBlock {
 	return HiveBlock{}
 }
 
-func (blks *Blocks) GetBlockByHeight(height int64) (HiveBlock, error) {
+func (blks *blockCollection) GetBlockByHeight(height int64) (HiveBlock, error) {
 	blk := HiveBlock{}
 
 	result := blks.FindOne(context.Background(), bson.M{
@@ -133,7 +108,7 @@ func (blks *Blocks) GetBlockByHeight(height int64) (HiveBlock, error) {
 	}
 }
 
-func (blks *Blocks) InsertBlock(blockData *HiveBlock) error {
+func (blks *blockCollection) InsertBlock(blockData *HiveBlock) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -141,19 +116,18 @@ func (blks *Blocks) InsertBlock(blockData *HiveBlock) error {
 	return err
 }
 
-func (b *Blocks) FindLatestBlock(ctx context.Context, buf *HiveBlock) error {
+func (b *blockCollection) FindLatestBlock(
+	ctx context.Context,
+	buf *HiveBlock,
+) error {
 	// since timestamp is encoded with mongodb, can query for lastest inserted ID
 	queryOpts := options.FindOne()
 	queryOpts.SetSort(bson.M{"_id": -1})
 
-	result := blockCollection.FindOne(ctx, bson.D{}, queryOpts)
+	result := b.Collection.FindOne(ctx, bson.D{}, queryOpts)
 	if result.Err() != nil {
 		return result.Err()
 	}
 
 	return result.Decode(&buf)
-}
-
-func (b *Blocks) FindBlockCount(ctx context.Context) (int64, error) {
-	return b.Collection.CountDocuments(ctx, bson.M{})
 }

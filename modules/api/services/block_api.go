@@ -27,9 +27,7 @@ type GetBlockReply struct {
 }
 
 func (BlockAPI) GetBlock(args *GetBlockArgs, reply *GetBlockReply) {
-	blockCollection := blockdb.Collection()
-
-	if err := blockCollection.QueryBlockByBlockNum(&reply.Block, args.BlockNum); err != nil {
+	if err := blockdb.Collection().QueryBlockByBlockNum(&reply.Block, args.BlockNum); err != nil {
 		slog.Error("Failed to query block by block number.",
 			"block-num", args.BlockNum, "err", err)
 	}
