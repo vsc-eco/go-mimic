@@ -154,3 +154,7 @@ func (b *Blocks) FindLatestBlock(ctx context.Context, buf *HiveBlock) error {
 
 	return result.Decode(&buf)
 }
+
+func (b *Blocks) FindBlockCount(ctx context.Context) (int64, error) {
+	return b.Collection.CountDocuments(ctx, bson.M{})
+}

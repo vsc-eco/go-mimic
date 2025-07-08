@@ -3,6 +3,7 @@ package producers
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"mimic/lib/utils"
 	"mimic/modules/db/mimic/blockdb"
 	"sync"
@@ -53,11 +54,23 @@ func (p *Producer) Stop() error {
 func (p *Producer) Produce(interval time.Duration) {
 	tick := time.NewTicker(interval)
 
-	latestBlock := &Block{&blockdb.HiveBlock{}}
-	err := blockdb.Collection().FindLatestBlock(p.ctx, latestBlock.HiveBlock)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+
+	latestBlock := &Block{&blockdb.HiveBlock{}, 0}
+	err := blockdb.Collection().FindLatestBlock(ctx, latestBlock.HiveBlock)
 	if err != nil {
 		panic(err)
 	}
+
+	latestBlock.blockNum, err = blockdb.Collection().FindBlockCount(ctx)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println()
+	fmt.Println("latest block.", "block", latestBlock)
+	fmt.Println()
 
 	trxQueue := transactionQueue{
 		mtx: new(sync.Mutex),
@@ -68,7 +81,13 @@ func (p *Producer) Produce(interval time.Duration) {
 		select {
 		case <-p.ctx.Done():
 			requests := trxQueue.collectBatch()
-			p.makeBlock(requests, latestBlock.NextBlock())
+			if _, err := p.makeBlock(requests, latestBlock.NextBlock()); err != nil {
+				slog.Error(
+					"Failed to create block.",
+					"block",
+					latestBlock.HiveBlock,
+				)
+			}
 			return
 
 		case req := <-p.trxQueue:
@@ -77,24 +96,52 @@ func (p *Producer) Produce(interval time.Duration) {
 
 		case <-tick.C:
 			requests := trxQueue.collectBatch()
-			latestBlock = p.makeBlock(requests, latestBlock.NextBlock())
+
+			lastBlock, err := p.makeBlock(requests, latestBlock.NextBlock())
+			if err != nil {
+				slog.Error(
+					"Failed to create block.",
+					"block", latestBlock.HiveBlock,
+					"err", err,
+				)
+			} else {
+				latestBlock = lastBlock
+			}
 		}
 	}
+}
+
+var stubWitness = Witness{
+	name: "hive-io-witness",
 }
 
 func (p *Producer) makeBlock(
 	requests []transactionRequest,
 	block Block,
-) *Block {
+) (*Block, error) {
 	fmt.Printf("Making block with with %d requests.\n", len(requests))
 
-	for _, req := range requests {
-		req.comm <- BroadcastTransactionResponse{}
-		close(req.comm)
-		fmt.Println("TODO: make block and send back response.")
+	trx := make([]any, len(requests))
+	for i := range requests {
+		trx[i] = requests[i].transaction
 	}
 
-	return &block
+	if err := block.MakeBlock(trx, stubWitness); err != nil {
+		return nil, err
+	}
+
+	for _, req := range requests {
+		req.comm <- BroadcastTransactionResponse{
+			BlockNum: block.blockNum,
+			// TODO: fill these out
+			ID:      "",
+			TrxNum:  0,
+			Expired: false,
+		}
+		close(req.comm)
+	}
+
+	return &block, nil
 }
 
 type Witness struct {

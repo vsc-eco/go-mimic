@@ -13,6 +13,8 @@ import (
 
 type Block struct {
 	*blockdb.HiveBlock
+
+	blockNum int64
 }
 
 func (b *Block) NextBlock() Block {
@@ -20,7 +22,7 @@ func (b *Block) NextBlock() Block {
 		ObjectID: primitive.NilObjectID,
 		Previous: b.HiveBlock.BlockID,
 	}
-	return Block{nextBlock}
+	return Block{nextBlock, b.blockNum + 1}
 }
 
 func (b *Block) MakeBlock(

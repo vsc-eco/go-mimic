@@ -1,14 +1,14 @@
 package producers
 
 type transactionRequest struct {
-	comm    chan BroadcastTransactionResponse
-	payload any
+	comm        chan BroadcastTransactionResponse
+	transaction []any
 }
 
-func BroadcastTransaction(trx any) transactionRequest {
+func BroadcastTransaction(trx []any) transactionRequest {
 	req := transactionRequest{
-		comm:    make(chan BroadcastTransactionResponse),
-		payload: trx,
+		comm:        make(chan BroadcastTransactionResponse),
+		transaction: trx,
 	}
 	producer.trxQueue <- req
 	return req
