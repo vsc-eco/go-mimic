@@ -55,8 +55,8 @@ func TestMakeBlock(t *testing.T) {
 	witness := Witness{name: "go-mimic-test"}
 
 	// test for empty merkle tree generation
-	firstBlock := Block{&buf[0]}
-	err = firstBlock.MakeBlock([]any{}, witness)
+	firstBlock := Block{&buf[0], 0}
+	err = firstBlock.makeBlock([]any{}, witness)
 	assert.Nil(t, err)
 	assert.Equal(
 		t,
@@ -69,10 +69,10 @@ func TestMakeBlock(t *testing.T) {
 	trx := make([]any, len(testTransactions))
 	copy(trx, testTransactions)
 
-	secondBlock := firstBlock.NextBlock()
+	secondBlock := firstBlock.nextBlock()
 	assert.Equal(t, firstBlock.BlockID, secondBlock.Previous)
 
-	err = secondBlock.MakeBlock(trx, witness)
+	err = secondBlock.makeBlock(trx, witness)
 	assert.Nil(t, err)
 
 	assert.Nil(t, err)
@@ -126,11 +126,11 @@ func TestMakeBlock(t *testing.T) {
 	)
 
 	// the merkle root is calculated
-	thirdBlock := secondBlock.NextBlock()
+	thirdBlock := secondBlock.nextBlock()
 	trxs := make([]any, len(testTransactions))
 	copy(trxs, testTransactions)
 
-	err = thirdBlock.MakeBlock(trxs, witness)
+	err = thirdBlock.makeBlock(trxs, witness)
 	assert.Nil(t, err)
 	assert.NotEqual(
 		t,

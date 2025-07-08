@@ -2,11 +2,9 @@ package producers
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"mimic/lib/utils"
 	"mimic/modules/db/mimic/blockdb"
-	"sync"
 	"time"
 
 	"github.com/chebyrash/promise"
@@ -35,7 +33,7 @@ func New() *Producer {
 // Runs initialization in order of how they are passed in to `Aggregate`
 func (p *Producer) Init() error {
 	p.ctx, p.stop = context.WithCancel(context.Background())
-	p.trxQueue = make(chan transactionRequest)
+	p.trxQueue = make(chan transactionRequest, 100) // bufferred
 
 	return nil
 }
@@ -69,16 +67,13 @@ func (p *Producer) Produce(interval time.Duration) {
 
 	// initialize queue + ticker
 	tick := time.NewTicker(interval)
-	trxQueue := transactionQueue{
-		mtx: new(sync.Mutex),
-		buf: make([]transactionRequest, 0, 100),
-	}
 
 	for {
 		select {
 		case <-p.ctx.Done():
-			requests := trxQueue.collectBatch()
-			if _, err := p.makeBlock(requests, latestBlock.NextBlock()); err != nil {
+			requests := p.batchTransactions()
+
+			if _, err := p.makeBlock(requests, latestBlock.nextBlock()); err != nil {
 				slog.Error(
 					"Failed to create block.",
 					"block",
@@ -87,25 +82,30 @@ func (p *Producer) Produce(interval time.Duration) {
 			}
 			return
 
-		case req := <-p.trxQueue:
-			trxQueue.push(req)
-			fmt.Printf("Request queued: %v.\n", req)
-
 		case <-tick.C:
-			requests := trxQueue.collectBatch()
+			requests := p.batchTransactions()
 
-			lastBlock, err := p.makeBlock(requests, latestBlock.NextBlock())
+			lastBlock, err := p.makeBlock(requests, latestBlock.nextBlock())
 			if err != nil {
 				slog.Error(
 					"Failed to create block.",
 					"block", latestBlock.HiveBlock,
 					"err", err,
 				)
-			} else {
-				latestBlock = lastBlock
+				continue
 			}
+
+			latestBlock = lastBlock
 		}
 	}
+}
+
+func (p *Producer) batchTransactions() []transactionRequest {
+	requests := make([]transactionRequest, len(p.trxQueue))
+	for i := range requests {
+		requests[i] = <-p.trxQueue
+	}
+	return requests
 }
 
 var stubWitness = Witness{
@@ -116,12 +116,16 @@ func (p *Producer) makeBlock(
 	requests []transactionRequest,
 	block Block,
 ) (*Block, error) {
+	slog.Debug("Producing new block.",
+		"transactions", len(requests),
+		"block-num", block.blockNum)
+
 	trx := make([]any, len(requests))
 	for i := range requests {
 		trx[i] = requests[i].transaction
 	}
 
-	if err := block.MakeBlock(trx, stubWitness); err != nil {
+	if err := block.makeBlock(trx, stubWitness); err != nil {
 		return nil, err
 	}
 

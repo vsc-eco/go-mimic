@@ -17,7 +17,7 @@ type Block struct {
 	blockNum int64
 }
 
-func (b *Block) NextBlock() Block {
+func (b *Block) nextBlock() Block {
 	nextBlock := &blockdb.HiveBlock{
 		ObjectID: primitive.NilObjectID,
 		Previous: b.HiveBlock.BlockID,
@@ -25,7 +25,7 @@ func (b *Block) NextBlock() Block {
 	return Block{nextBlock, b.blockNum + 1}
 }
 
-func (b *Block) MakeBlock(
+func (b *Block) makeBlock(
 	transactions []any,
 	witness Witness,
 ) error {
