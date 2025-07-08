@@ -73,6 +73,7 @@ func main() {
 	agg.Start().Await(ctx)
 	defer agg.Stop()
 
+	// start producer
 	interval := time.Second * 3
 	slog.Debug("Producing blocks.", "interval", interval)
 	go producer.Produce(interval)
