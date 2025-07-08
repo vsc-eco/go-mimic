@@ -22,7 +22,10 @@ type APIServer struct {
 	services  map[string]reflect.Value
 }
 
-func (s *APIServer) RegisterMethod(alias, methodName string, servc any) ServiceMethod {
+func (s *APIServer) RegisterMethod(
+	alias, methodName string,
+	servc any,
+) ServiceMethod {
 	servType := reflect.TypeOf(servc)
 
 	method, success := servType.MethodByName(methodName)
@@ -43,7 +46,10 @@ func (s *APIServer) RegisterMethod(alias, methodName string, servc any) ServiceM
 	}
 }
 
-func (s *APIServer) RegisterService(service services.ServiceHandler, name string) {
+func (s *APIServer) RegisterService(
+	service services.ServiceHandler,
+	name string,
+) {
 	service.Expose(func(alias string, methodName string) {
 		serv := s.RegisterMethod(alias, methodName, service)
 		s.rpcRoutes[name+"."+alias] = &serv
@@ -75,7 +81,11 @@ func (s *APIServer) Init() {
 	router.Use(httplog.RequestLogger(slog.Default(), loggerOpts))
 
 	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("go-mimic v1.0.0; Hive blockchain end to end simulation. To learn more, visit https://github.com/vsc-eco/go-mimic"))
+		w.Write(
+			[]byte(
+				"go-mimic v1.0.0; Hive blockchain end to end simulation. To learn more, visit https://github.com/vsc-eco/go-mimic",
+			),
+		)
 	})
 
 	router.Get("/health", func(w http.ResponseWriter, r *http.Request) {
@@ -86,6 +96,7 @@ func (s *APIServer) Init() {
 	router.Post("/", func(w http.ResponseWriter, r *http.Request) {
 		var req map[string]any
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			slog.Error("failed to decode incoming requests.", "err", err)
 			http.Error(w, "invalid request", http.StatusBadRequest)
 			return
 		}

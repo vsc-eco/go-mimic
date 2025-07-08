@@ -1,11 +1,13 @@
 package producers
 
+import "mimic/modules/db/mimic/transactiondb"
+
 type transactionRequest struct {
 	comm        chan BroadcastTransactionResponse
-	transaction []any
+	transaction []transactiondb.Transaction
 }
 
-func BroadcastTransaction(trx []any) transactionRequest {
+func BroadcastTransactions(trx []transactiondb.Transaction) transactionRequest {
 	req := transactionRequest{
 		comm:        make(chan BroadcastTransactionResponse),
 		transaction: trx,

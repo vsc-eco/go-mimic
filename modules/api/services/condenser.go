@@ -239,12 +239,7 @@ func (c *Condenser) BroadcastTransactionSynchronous(
 	args *[]transactiondb.Transaction,
 	reply *producers.BroadcastTransactionResponse,
 ) {
-	trx := make([]any, len(*args))
-	for i, t := range *args {
-		trx[i] = t
-	}
-
-	req := producers.BroadcastTransaction(trx)
+	req := producers.BroadcastTransactions(*args)
 	*reply = req.Response()
 }
 
