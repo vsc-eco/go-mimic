@@ -52,8 +52,7 @@ func (p *Producer) Stop() error {
 }
 
 func (p *Producer) Produce(interval time.Duration) {
-	tick := time.NewTicker(interval)
-
+	// get latest block
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
@@ -68,10 +67,8 @@ func (p *Producer) Produce(interval time.Duration) {
 		panic(err)
 	}
 
-	fmt.Println()
-	fmt.Println("latest block.", "block", latestBlock)
-	fmt.Println()
-
+	// initialize queue + ticker
+	tick := time.NewTicker(interval)
 	trxQueue := transactionQueue{
 		mtx: new(sync.Mutex),
 		buf: make([]transactionRequest, 0, 100),
@@ -119,14 +116,16 @@ func (p *Producer) makeBlock(
 	requests []transactionRequest,
 	block Block,
 ) (*Block, error) {
-	fmt.Printf("Making block with with %d requests.\n", len(requests))
-
 	trx := make([]any, len(requests))
 	for i := range requests {
 		trx[i] = requests[i].transaction
 	}
 
 	if err := block.MakeBlock(trx, stubWitness); err != nil {
+		return nil, err
+	}
+
+	if err := blockdb.Collection().InsertBlock(block.HiveBlock); err != nil {
 		return nil, err
 	}
 

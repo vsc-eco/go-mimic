@@ -130,16 +130,12 @@ func (blks *Blocks) GetBlockByHeight(height int64) (HiveBlock, error) {
 	}
 }
 
-func (blks *Blocks) InsertBlock(blockData HiveBlock) {
-	/*
-		ctx := context.Background()
-		options := options.FindOneAndUpdate().SetUpsert(true)
-		blks.FindOneAndUpdate(ctx, bson.M{
-			"height": blockData.Height,
-		}, bson.M{
-			"$set": blockData,
-		}, options)
-	*/
+func (blks *Blocks) InsertBlock(blockData *HiveBlock) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	_, err := blks.InsertOne(ctx, blockData)
+	return err
 }
 
 func (b *Blocks) FindLatestBlock(ctx context.Context, buf *HiveBlock) error {
