@@ -8,7 +8,6 @@ import (
 )
 
 type Block struct {
-	BlockNum              uint64   `json:"-"                       bson:"block_num"`
 	BlockId               string   `json:"block_id"`
 	Previous              string   `json:"previous"`
 	Timestamp             string   `json:"timestamp"`
@@ -24,6 +23,7 @@ type Block struct {
 type HiveBlock struct {
 	ObjectID primitive.ObjectID `json:"-" bson:"_id,omitempty"`
 
+	BlockNum         uint32 `json:"-"                       bson:"block_num"`
 	BlockID          string `json:"block_id"`
 	Previous         string `json:"previous"`
 	Timestamp        string `json:"timestamp"`

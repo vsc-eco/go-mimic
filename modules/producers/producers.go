@@ -12,9 +12,8 @@ import (
 )
 
 const (
-	blockProducer = "go-mimic-producer"
-	blockIdLen    = 16
-
+	blockProducer       = "go-mimic-producer"
+	blockIdLen          = 16
 	merkleRootBlockSize = 32
 )
 
@@ -41,6 +40,7 @@ func (p *Producer) Init() error {
 
 // Runs startup and should be non blocking
 func (p *Producer) Start() *promise.Promise[any] {
+	go p.produceBlocks(time.Second * 3)
 	return utils.PromiseResolve[any](nil)
 }
 
@@ -50,31 +50,30 @@ func (p *Producer) Stop() error {
 	return nil
 }
 
-func (p *Producer) Produce(interval time.Duration) {
+func (p *Producer) produceBlocks(interval time.Duration) {
+	slog.Debug("Producing blocks.", "interval", interval)
+
 	// get latest block
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
-	latestBlock := &Block{&blockdb.HiveBlock{}, 0}
+	latestBlock := &producerBlock{&blockdb.HiveBlock{}}
 	err := blockdb.Collection().FindLatestBlock(ctx, latestBlock.HiveBlock)
 	if err != nil {
 		panic(err)
 	}
 
-	latestBlock.blockNum, err = blockdb.Collection().FindBlockCount(ctx)
-	if err != nil {
+	if _, err := latestBlock.getBlockNum(); err != nil {
 		panic(err)
 	}
 
-	// initialize queue + ticker
 	tick := time.NewTicker(interval)
-
 	for {
 		select {
 		case <-p.ctx.Done():
 			requests := p.batchTransactions()
 
-			if _, err := p.makeBlock(requests, latestBlock.nextBlock()); err != nil {
+			if _, err := p.makeBlock(requests, latestBlock.next()); err != nil {
 				slog.Error(
 					"Failed to create block.",
 					"block",
@@ -86,7 +85,7 @@ func (p *Producer) Produce(interval time.Duration) {
 		case <-tick.C:
 			requests := p.batchTransactions()
 
-			lastBlock, err := p.makeBlock(requests, latestBlock.nextBlock())
+			lastBlock, err := p.makeBlock(requests, latestBlock.next())
 			if err != nil {
 				slog.Error(
 					"Failed to create block.",
@@ -115,21 +114,21 @@ var stubWitness = Witness{
 
 func (p *Producer) makeBlock(
 	requests []transactionRequest,
-	block Block,
-) (*Block, error) {
-	slog.Debug("Producing new block.",
-		"transactions", len(requests),
-		"block-num", block.blockNum)
-
-	trxBuffer := make([]any, 0, len(requests))
+	block producerBlock,
+) (*producerBlock, error) {
+	transactions := make([]any, 0, len(requests))
 	for _, request := range requests {
 		for _, trx := range request.transaction {
-			trxBuffer = slices.Concat(trxBuffer, trx.Operations)
+			transactions = slices.Concat(transactions, trx.Operations)
 			// TODO: validate the signature
 		}
 	}
 
-	if err := block.makeBlock(trxBuffer, stubWitness); err != nil {
+	if err := block.sign(transactions, stubWitness); err != nil {
+		return nil, err
+	}
+
+	if _, err := block.getBlockNum(); err != nil {
 		return nil, err
 	}
 
@@ -139,7 +138,7 @@ func (p *Producer) makeBlock(
 
 	for _, req := range requests {
 		req.comm <- BroadcastTransactionResponse{
-			BlockNum: block.blockNum,
+			BlockNum: block.BlockNum,
 			// TODO: fill these out
 			ID:      "",
 			TrxNum:  0,
@@ -147,6 +146,10 @@ func (p *Producer) makeBlock(
 		}
 		close(req.comm)
 	}
+
+	slog.Debug("New block produced.",
+		"transactions", len(requests),
+		"block-num", block.BlockNum)
 
 	return &block, nil
 }

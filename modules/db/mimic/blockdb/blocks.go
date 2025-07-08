@@ -52,7 +52,7 @@ func (d *Blocks) Init() error {
 }
 
 func (d *Blocks) Start() *promise.Promise[any] {
-	var blocks []Block
+	var blocks []HiveBlock
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
@@ -71,7 +71,10 @@ func (d *Blocks) Stop() error {
 
 // Queries
 
-func (b *Blocks) QueryBlockByBlockNum(blockBuf *Block, blockNum int64) error {
+func (b *Blocks) QueryBlockByBlockNum(
+	blockBuf *HiveBlock,
+	blockNum int64,
+) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
@@ -85,7 +88,7 @@ func (b *Blocks) QueryBlockByBlockNum(blockBuf *Block, blockNum int64) error {
 	return result.Decode(blockBuf)
 }
 
-func (b *Blocks) QueryBlockByRange(blocks *[]Block, start, end int) error {
+func (b *Blocks) QueryBlockByRange(blocks *[]HiveBlock, start, end int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
@@ -108,8 +111,8 @@ func (blks *Blocks) GetBlockRange(
 	return nil
 }
 
-func (blks *Blocks) GetBlockById(id string) Block {
-	return Block{}
+func (blks *Blocks) GetBlockById(id string) HiveBlock {
+	return HiveBlock{}
 }
 
 func (blks *Blocks) GetBlockByHeight(height int64) (HiveBlock, error) {

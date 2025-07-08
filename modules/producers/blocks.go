@@ -3,32 +3,27 @@ package producers
 import (
 	"encoding/binary"
 	"encoding/hex"
+	"errors"
 	"mimic/modules/db/mimic/blockdb"
 	"slices"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"golang.org/x/crypto/sha3"
 )
 
-type Block struct {
+type producerBlock struct {
 	*blockdb.HiveBlock
-
-	blockNum int64
 }
 
-func (b *Block) nextBlock() Block {
+func (b *producerBlock) next() producerBlock {
 	nextBlock := &blockdb.HiveBlock{
 		ObjectID: primitive.NilObjectID,
 		Previous: b.HiveBlock.BlockID,
 	}
-	return Block{nextBlock, b.blockNum + 1}
+	return producerBlock{nextBlock}
 }
 
-func (b *Block) makeBlock(
-	transactions []any,
-	witness Witness,
-) error {
+func (b *producerBlock) sign(transactions []any, witness Witness) error {
 	b.Timestamp = time.Now().Format(time.RFC3339)
 
 	// get block number
@@ -69,7 +64,8 @@ func (b *Block) makeBlock(
 	copy(blockDigest[:len(blockCtrBuf)], blockCtrBuf[:])
 
 	// write the digest buf
-	sha3.ShakeSum256(blockDigest[len(blockCtrBuf):], buf)
+	bufHash := checksum(buf)
+	copy(blockDigest[len(blockCtrBuf):], bufHash[:16])
 
 	// write to new block
 	b.BlockID = hex.EncodeToString(blockDigest)
@@ -95,7 +91,7 @@ func generateMerkleRoot(transactions []any) ([]byte, error) {
 			return nil, err
 		}
 
-		digest := sha3.Sum256(bytes)
+		digest := checksum(bytes)
 		return digest[:], nil
 	}
 
@@ -112,7 +108,7 @@ func generateMerkleRoot(transactions []any) ([]byte, error) {
 			return nil, err
 		}
 
-		digests[i] = sha3.Sum256(bytes)
+		digests[i] = checksum(bytes)
 	}
 
 	// incase the length of transactions is odd, duplicate the last transaction
@@ -127,11 +123,25 @@ func generateMerkleRoot(transactions []any) ([]byte, error) {
 		for i := range buf {
 			left := digests[i<<1][:]
 			right := digests[(i<<1)+1][:]
-			buf[i] = sha3.Sum256(slices.Concat(left, right))
+			buf[i] = checksum(slices.Concat(left, right))
 		}
 
 		digests = buf
 	}
 
 	return digests[0][:], nil
+}
+
+func (p *producerBlock) getBlockNum() (uint32, error) {
+	if len(p.BlockID) < 8 {
+		return 0, errors.New("Invalid block id.")
+	}
+
+	blockNumBytes, err := hex.DecodeString(p.BlockID[:8])
+	if err != nil {
+		return 0, err
+	}
+
+	p.BlockNum = binary.BigEndian.Uint32(blockNumBytes)
+	return p.BlockNum, nil
 }

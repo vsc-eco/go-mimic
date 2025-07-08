@@ -22,7 +22,7 @@ func (t *transactionRequest) Response() BroadcastTransactionResponse {
 
 type BroadcastTransactionResponse struct {
 	ID       string `json:"id"`
-	BlockNum int64  `json:"block_num"`
-	TrxNum   int64  `json:"trx_num"`
+	BlockNum uint32 `json:"block_num"`
+	TrxNum   uint32 `json:"trx_num"`
 	Expired  bool   `json:"expired"`
 }

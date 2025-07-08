@@ -15,7 +15,7 @@ type GetBlockRangeArgs struct {
 }
 
 type GetBlockRangeReply struct {
-	Blocks []blockdb.Block `json:"blocks"`
+	Blocks []blockdb.HiveBlock `json:"blocks"`
 }
 
 type GetBlockArgs struct {
@@ -23,7 +23,7 @@ type GetBlockArgs struct {
 }
 
 type GetBlockReply struct {
-	Block blockdb.Block `json:"block"`
+	Block blockdb.HiveBlock `json:"block"`
 }
 
 func (BlockAPI) GetBlock(args *GetBlockArgs, reply *GetBlockReply) {
@@ -35,7 +35,10 @@ func (BlockAPI) GetBlock(args *GetBlockArgs, reply *GetBlockReply) {
 	}
 }
 
-func (BlockAPI) GetBlockRange(args *GetBlockRangeArgs, reply *GetBlockRangeReply) {
+func (BlockAPI) GetBlockRange(
+	args *GetBlockRangeArgs,
+	reply *GetBlockRangeReply,
+) {
 	start := args.StartingBlockNum
 	end := start + args.Count
 
