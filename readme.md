@@ -44,6 +44,7 @@ Not all transactions are supported on Mimic. However, we have implemented the fo
 **Mimic APIs**
 
 - Admin create account / modify keys 🚧
+    - `broadcast_ops.account_create`
 - Admin transaction 🚧
 - Admin reset block database
 

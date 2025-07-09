@@ -157,11 +157,13 @@ func (s *APIServer) Start() {
 	rcService := &services.RcApi{}
 	blockApi := &services.BlockAPI{}
 	accountHistoryApi := &services.AccountHistoryApi{}
+	broadcastOps := &services.BroadcastOps{}
 
 	s.RegisterService(service, "condenser_api")
 	s.RegisterService(rcService, "rc_api")
 	s.RegisterService(blockApi, "block_api")
 	s.RegisterService(accountHistoryApi, "account_history_api")
+	s.RegisterService(broadcastOps, "broadcast_ops")
 
 	port := "3000"
 	slog.Info("APIServer accepting requests.", "port", port)

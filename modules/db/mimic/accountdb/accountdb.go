@@ -13,8 +13,16 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+type AccountDBQueries interface{}
+
 type AccountDB struct {
 	*mongo.Collection
+}
+
+var collection AccountDBQueries = &AccountDB{nil}
+
+func Collection() *AccountDB {
+	return collection.(*AccountDB)
 }
 
 // Runs initialization in order of how they are passed in to `Aggregate`
@@ -47,15 +55,12 @@ func (accountdb *AccountDB) Stop() error {
 	return nil
 }
 
-var collection = &AccountDB{nil}
-
-func Collection() *AccountDB {
-	return collection
-}
-
 func New(d *mimic.MimicDb) *AccountDB {
-	collection.Collection = db.NewCollection(d.DbInstance, "accounts")
-	return collection
+	collection.(*AccountDB).Collection = db.NewCollection(
+		d.DbInstance,
+		"accounts",
+	)
+	return collection.(*AccountDB)
 }
 
 func (a *AccountDB) QueryAccountByNames(

@@ -1,0 +1,46 @@
+### broadcast_ops.account_create
+
+POST http://localhost:3000 HTTP/1.1
+Accept: application/json
+Content-Type: application/json
+
+{
+  "jsonrpc": "2.0",
+  "method": "broadcast_ops.account_create",
+  "id": 3,
+  "params": [
+    "account_create",
+    {
+      "fee": {
+        "amount": "0",
+        "precision": 3,
+        "nai": "@@000000021"
+      },
+      "creator": "hiveio",
+      "new_account_name": "alice",
+      "owner": {
+        "weight_threshold": 1,
+        "account_auths": [],
+        "key_auths": [
+          ["STM5b4i9gBqvh4sbgrooXPu2dbGLewNPZkXeuNeBjyiswnu2szgXx", 1]
+        ]
+      },
+      "active": {
+        "weight_threshold": 1,
+        "account_auths": [],
+        "key_auths": [
+          ["STM7ko5nzqaYfjbD4tKWGmiy3xtT9eQFZ3Pcmq5JmygTRptWSiVQy", 1]
+        ]
+      },
+      "posting": {
+        "weight_threshold": 1,
+        "account_auths": [],
+        "key_auths": [
+          ["STM5xAKxnMT2y9VoVJdF63K8xRQAohsiQy9bA33aHeyMB5vgkzaay", 1]
+        ]
+      },
+      "memo_key": "STM8ZSyzjPm48GmUuMSRufkVYkwYbZzbxeMysAVp7KFQwbTf98TcG",
+      "json_metadata": "{}"
+    }
+  ]
+}
