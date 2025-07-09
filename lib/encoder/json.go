@@ -7,10 +7,10 @@ import (
 	"reflect"
 )
 
-// Since a valid data struct of Hive is an array of different types, and Go
+// since a valid data struct of Hive is an array of different types, and Go
 // does not like that, this function deserialize the value of each element in
 // the array as struct exported field, in the order they are defined.
-func JsonArrayMarshaler(buf any, rawJson []byte) error {
+func JsonArrayDeserialize(buf any, rawJson []byte) error {
 	bufPtr := reflect.ValueOf(buf)
 	if bufPtr.Kind() != reflect.Ptr ||
 		bufPtr.Elem().Kind() != reflect.Struct {
@@ -61,12 +61,12 @@ func JsonArrayMarshaler(buf any, rawJson []byte) error {
 func setFieldValue(field reflect.Value, value any) error {
 	valueV := reflect.ValueOf(value)
 
-	// Direct assignment if types match
 	if valueV.Type().AssignableTo(field.Type()) {
 		field.Set(valueV)
 		return nil
 	}
 
+	// thank you claude
 	switch field.Kind() {
 
 	case reflect.String:

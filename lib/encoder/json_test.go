@@ -20,7 +20,7 @@ type testStruct struct {
 func TestJsonArrayMarshaler(t *testing.T) {
 	raw := []byte(`["Field1 exported", 12, {}]`)
 	buf := testStruct{}
-	err := encoder.JsonArrayMarshaler(&buf, raw)
+	err := encoder.JsonArrayDeserialize(&buf, raw)
 	assert.Nil(t, err)
 	assert.Empty(t, buf.field1)
 	assert.Equal(t, "Field1 exported", buf.Field1)
