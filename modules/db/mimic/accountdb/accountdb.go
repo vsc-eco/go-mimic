@@ -36,15 +36,15 @@ func (accountdb *AccountDB) Init() error {
 		Options: options.Index().SetUnique(true).SetName("name_unique"),
 	})
 
-	accounts := [...][2]string{
-		{"go-mimic-root-username", "go-mimic-root-password"},
-		{"alice", "alice-password"},
-		{"bob", "bob-password"},
+	// load seed user
+	accounts, err := GetSeedAccounts()
+	if err != nil {
+		return err
 	}
 
 	documents := make([]any, len(accounts))
 	for i, a := range accounts {
-		documents[i], privateKeyMap[a[0]] = makeAccount(a[0], a[1])
+		documents[i] = a
 	}
 
 	result, err := accountdb.Collection.InsertMany(ctx, documents)

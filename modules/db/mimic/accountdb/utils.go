@@ -2,6 +2,7 @@ package accountdb
 
 import (
 	"fmt"
+	"mimic/mock"
 	"mimic/modules/crypto"
 )
 
@@ -23,48 +24,63 @@ func GetPrivateKey(username string) (*crypto.HiveKeySet, error) {
 	return &k, nil
 }
 
-func makeAccount(username, password string) (Account, crypto.HiveKeySet) {
-	keySet := crypto.MakeHiveKeySet(username, password)
-	account := Account{
-		Name: username,
-		Active: AccountAuthority{
-			WeightThreshold: 1,
-			AccountAuths: []AccountAuth{{
-				Account: username,
-				Weight:  1,
-			}},
-			KeyAuths: []KeyAuth{{
-				PublicKey: keySet.ActiveKey().PublicKeyHex(),
-				Weight:    1,
-			}},
-		},
-
-		Owner: AccountAuthority{
-			WeightThreshold: 1,
-			AccountAuths: []AccountAuth{{
-				Account: username,
-				Weight:  1,
-			}},
-			KeyAuths: []KeyAuth{{
-				PublicKey: keySet.OwnerKey().PublicKeyHex(),
-				Weight:    1,
-			}},
-		},
-
-		Posting: AccountAuthority{
-			WeightThreshold: 1,
-			AccountAuths: []AccountAuth{{
-				Account: username,
-				Weight:  1,
-			}},
-			KeyAuths: []KeyAuth{{
-				PublicKey: keySet.PostingKey().PublicKeyHex(),
-				Weight:    1,
-			}},
-		},
-
-		MemoKey: keySet.MemoKey(),
+// generate the keys for the seed account, the private keys are stored in
+// memory, writing to the global variable `privateKeyMap`
+func GetSeedAccounts() ([]Account, error) {
+	accounts, err := mock.LoadSeedUserCredentials()
+	if err != nil {
+		return nil, err
 	}
 
-	return account, keySet
+	accountBuf := make([]Account, len(accounts))
+
+	for i, account := range accounts {
+		username, password := account.Username, account.Password
+
+		keySet := crypto.MakeHiveKeySet(username, password)
+		privateKeyMap[username] = keySet
+
+		accountBuf[i] = Account{
+			Name: username,
+			Active: AccountAuthority{
+				WeightThreshold: 1,
+				AccountAuths: []AccountAuth{{
+					Account: username,
+					Weight:  1,
+				}},
+				KeyAuths: []KeyAuth{{
+					PublicKey: keySet.ActiveKey().PublicKeyHex(),
+					Weight:    1,
+				}},
+			},
+
+			Owner: AccountAuthority{
+				WeightThreshold: 1,
+				AccountAuths: []AccountAuth{{
+					Account: username,
+					Weight:  1,
+				}},
+				KeyAuths: []KeyAuth{{
+					PublicKey: keySet.OwnerKey().PublicKeyHex(),
+					Weight:    1,
+				}},
+			},
+
+			Posting: AccountAuthority{
+				WeightThreshold: 1,
+				AccountAuths: []AccountAuth{{
+					Account: username,
+					Weight:  1,
+				}},
+				KeyAuths: []KeyAuth{{
+					PublicKey: keySet.PostingKey().PublicKeyHex(),
+					Weight:    1,
+				}},
+			},
+
+			MemoKey: keySet.MemoKey(),
+		}
+	}
+
+	return accountBuf, nil
 }
