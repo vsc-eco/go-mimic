@@ -16,19 +16,50 @@ const (
 	postingKeyRole = keyRole("posting")
 	activeKeyRole  = keyRole("active")
 	ownerKeyRole   = keyRole("owner")
+	memoKeyRole    = keyRole("memo")
 )
 
 type HiveKeySet struct {
 	ownerKey   hiveKey
 	activeKey  hiveKey
 	postingKey hiveKey
+	memoKey    string
 }
 
-func (h *HiveKeySet) OwnerKey() *hiveKey { return &h.ownerKey }
+func MakeHiveKeySet(account, password string) HiveKeySet {
+	key := HiveKeySet{}
 
-func (h *HiveKeySet) ActiveKey() *hiveKey { return &h.activeKey }
+	key.ownerKey = makeHiveKey(nil, account, password, ownerKeyRole)
 
+	key.activeKey = makeHiveKey(
+		key.ownerKey.privKey.Serialize(),
+		account,
+		password,
+		activeKeyRole,
+	)
+
+	key.postingKey = makeHiveKey(
+		key.ownerKey.privKey.Serialize(),
+		account,
+		password,
+		postingKeyRole,
+	)
+
+	memoKeyParts := sha256.Sum256(slices.Concat(
+		[]byte(account),
+		[]byte(password),
+		[]byte(memoKeyRole),
+	))
+
+	key.memoKey = hex.EncodeToString(memoKeyParts[:])
+
+	return key
+}
+
+func (h *HiveKeySet) OwnerKey() *hiveKey   { return &h.ownerKey }
+func (h *HiveKeySet) ActiveKey() *hiveKey  { return &h.activeKey }
 func (h *HiveKeySet) PostingKey() *hiveKey { return &h.postingKey }
+func (h *HiveKeySet) MemoKey() string      { return h.memoKey }
 
 type hiveKey struct {
 	pubKey  *btcec.PublicKey

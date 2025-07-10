@@ -2,7 +2,9 @@ package accountdb
 
 import (
 	"context"
+	"log/slog"
 	"mimic/lib/utils"
+	"mimic/modules/crypto"
 	"mimic/modules/db"
 	"mimic/modules/db/mimic"
 	"time"
@@ -35,19 +37,36 @@ func (accountdb *AccountDB) Init() error {
 		Options: options.Index().SetUnique(true).SetName("name_unique"),
 	})
 
+	accounts := [...][2]string{
+		{"go-mimic-root-username", "go-mimic-root-password"},
+		{"alice", "alice-password"},
+		{"bob", "bob-password"},
+	}
+
+	documents := make([]any, len(accounts))
+	for i, a := range accounts {
+		documents[i] = makeAccount(a[0], a[1])
+	}
+
+	result, err := accountdb.Collection.InsertMany(ctx, documents)
+	if err != nil && !mongo.IsDuplicateKeyError(err) {
+		return err
+	}
+
+	slog.Debug(
+		"Seeded collection.",
+		"collection",
+		accountdb.Collection.Name(),
+		"documents",
+		len(result.InsertedIDs),
+	)
+
 	return nil
 }
 
 // Runs startup and should be non blocking
 func (accountdb *AccountDB) Start() *promise.Promise[any] {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer cancel()
-
-	accountBuf := make([]Account, 0)
-	db.Seed(&accountBuf, ctx, accountdb.Collection,
-		"condenser_api.get_accounts.json")
-
-	return utils.PromiseResolve[any](accountdb)
+	return utils.PromiseResolve[any](nil)
 }
 
 // Runs cleanup once the `Aggregate` is finished
@@ -78,4 +97,49 @@ func (a *AccountDB) QueryAccountByNames(
 	defer cursor.Close(ctx)
 
 	return cursor.All(ctx, buf)
+}
+
+func makeAccount(username, password string) Account {
+	keySet := crypto.MakeHiveKeySet(username, password)
+
+	return Account{
+		Name: username,
+		Active: AccountAuthority{
+			WeightThreshold: 1,
+			AccountAuths: []AccountAuth{{
+				Account: username,
+				Weight:  1,
+			}},
+			KeyAuths: []KeyAuth{{
+				PublicKey: keySet.ActiveKey().PublicKeyHex(),
+				Weight:    1,
+			}},
+		},
+
+		Owner: AccountAuthority{
+			WeightThreshold: 1,
+			AccountAuths: []AccountAuth{{
+				Account: username,
+				Weight:  1,
+			}},
+			KeyAuths: []KeyAuth{{
+				PublicKey: keySet.OwnerKey().PublicKeyHex(),
+				Weight:    1,
+			}},
+		},
+
+		Posting: AccountAuthority{
+			WeightThreshold: 1,
+			AccountAuths: []AccountAuth{{
+				Account: username,
+				Weight:  1,
+			}},
+			KeyAuths: []KeyAuth{{
+				PublicKey: keySet.PostingKey().PublicKeyHex(),
+				Weight:    1,
+			}},
+		},
+
+		MemoKey: keySet.MemoKey(),
+	}
 }
