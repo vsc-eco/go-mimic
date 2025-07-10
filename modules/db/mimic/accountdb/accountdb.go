@@ -4,7 +4,6 @@ import (
 	"context"
 	"log/slog"
 	"mimic/lib/utils"
-	"mimic/modules/crypto"
 	"mimic/modules/db"
 	"mimic/modules/db/mimic"
 	"time"
@@ -45,7 +44,7 @@ func (accountdb *AccountDB) Init() error {
 
 	documents := make([]any, len(accounts))
 	for i, a := range accounts {
-		documents[i] = makeAccount(a[0], a[1])
+		documents[i], privateKeyMap[a[0]] = makeAccount(a[0], a[1])
 	}
 
 	result, err := accountdb.Collection.InsertMany(ctx, documents)
@@ -60,6 +59,8 @@ func (accountdb *AccountDB) Init() error {
 		"documents",
 		len(result.InsertedIDs),
 	)
+
+	slog.Debug("Mock private keys loaded.", "key-num", len(privateKeyMap))
 
 	return nil
 }
@@ -97,49 +98,4 @@ func (a *AccountDB) QueryAccountByNames(
 	defer cursor.Close(ctx)
 
 	return cursor.All(ctx, buf)
-}
-
-func makeAccount(username, password string) Account {
-	keySet := crypto.MakeHiveKeySet(username, password)
-
-	return Account{
-		Name: username,
-		Active: AccountAuthority{
-			WeightThreshold: 1,
-			AccountAuths: []AccountAuth{{
-				Account: username,
-				Weight:  1,
-			}},
-			KeyAuths: []KeyAuth{{
-				PublicKey: keySet.ActiveKey().PublicKeyHex(),
-				Weight:    1,
-			}},
-		},
-
-		Owner: AccountAuthority{
-			WeightThreshold: 1,
-			AccountAuths: []AccountAuth{{
-				Account: username,
-				Weight:  1,
-			}},
-			KeyAuths: []KeyAuth{{
-				PublicKey: keySet.OwnerKey().PublicKeyHex(),
-				Weight:    1,
-			}},
-		},
-
-		Posting: AccountAuthority{
-			WeightThreshold: 1,
-			AccountAuths: []AccountAuth{{
-				Account: username,
-				Weight:  1,
-			}},
-			KeyAuths: []KeyAuth{{
-				PublicKey: keySet.PostingKey().PublicKeyHex(),
-				Weight:    1,
-			}},
-		},
-
-		MemoKey: keySet.MemoKey(),
-	}
 }
