@@ -1,6 +1,7 @@
 package accountdb
 
 import (
+	"encoding/json"
 	"mimic/lib/encoder"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -39,6 +40,11 @@ type AccountAuth struct {
 	Weight  int    `json:"weight"`
 }
 
+func (a *AccountAuth) MarshalJSON() ([]byte, error) {
+	buf := [2]any{a.Account, a.Weight}
+	return json.Marshal(buf)
+}
+
 func (a *AccountAuth) UnmarshalJSON(raw []byte) error {
 	return encoder.JsonArrayDeserialize(a, raw)
 }
@@ -47,6 +53,11 @@ func (a *AccountAuth) UnmarshalJSON(raw []byte) error {
 type KeyAuth struct {
 	PublicKey string `json:"public_key"`
 	Weight    int    `json:"weight"`
+}
+
+func (k *KeyAuth) MarshalJSON() ([]byte, error) {
+	buf := [2]any{k.PublicKey, k.Weight}
+	return json.Marshal(buf)
 }
 
 func (a *KeyAuth) UnmarshalJSON(raw []byte) error {
