@@ -1,0 +1,14 @@
+[
+  {
+    "username": "go-mimic-root-username",
+    "password": "go-mimic-root-password"
+  },
+  {
+    "username": "alice",
+    "password": "alice-password"
+  },
+  {
+    "username": "bob",
+    "password": "bob-password"
+  }
+]

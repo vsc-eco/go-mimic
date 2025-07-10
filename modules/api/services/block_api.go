@@ -1,7 +1,7 @@
 package services
 
 import (
-	"fmt"
+	"mimic/modules/db/mimic/blockdb"
 
 	"golang.org/x/exp/slog"
 )
@@ -15,56 +15,35 @@ type GetBlockRangeArgs struct {
 }
 
 type GetBlockRangeReply struct {
-	Blocks []getBlockBlock `json:"blocks"`
-}
-
-func (BlockAPI) GetBlockRange(args *GetBlockRangeArgs, reply *GetBlockRangeReply) {
-	data, err := getMockData[GetBlockReply]("mockdata/block_api.get_block.mock.json")
-	if err != nil {
-		panic(err)
-	}
-
-	for i := 0; i <= args.Count; i++ {
-		blockIndex := fmt.Sprintf("%d", args.StartingBlockNum+i)
-		block, ok := data[blockIndex]
-		if !ok {
-			continue
-		}
-		reply.Blocks = append(reply.Blocks, block.Block)
-	}
+	Blocks []blockdb.HiveBlock `json:"blocks"`
 }
 
 type GetBlockArgs struct {
 	BlockNum int64 `json:"block_num"`
 }
 
-type getBlockBlock struct {
-	Previous              string   `json:"previous"`
-	Timestamp             string   `json:"timestamp"`
-	Witness               string   `json:"witness"`
-	TransactionMerkleRoot string   `json:"transaction_merkle_root"`
-	Extensions            []string `json:"extensions"`
-	WitnessSignature      string   `json:"witness_signature"`
-	Transactions          []string `json:"transactions"`
-	BlockId               string   `json:"block_id"`
-	SigningKey            string   `json:"signing_key"`
-	TransactionIds        []string `json:"transaction_ids"`
-}
 type GetBlockReply struct {
-	Block getBlockBlock `json:"block"`
+	Block blockdb.HiveBlock `json:"block"`
 }
 
 func (BlockAPI) GetBlock(args *GetBlockArgs, reply *GetBlockReply) {
-	data, err := getMockData[GetBlockReply]("mockdata/block_api.get_block.mock.json")
-	if err != nil {
-		panic(err)
+	if err := blockdb.Collection().QueryBlockByBlockNum(&reply.Block, args.BlockNum); err != nil {
+		slog.Error("Failed to query block by block number.",
+			"block-num", args.BlockNum, "err", err)
 	}
+}
 
-	block, ok := data[fmt.Sprintf("%d", args.BlockNum)]
-	if !ok {
-		slog.Error("Block not found.", "block_num", args.BlockNum)
-	} else {
-		*reply = block
+func (BlockAPI) GetBlockRange(
+	args *GetBlockRangeArgs,
+	reply *GetBlockRangeReply,
+) {
+	start := args.StartingBlockNum
+	end := start + args.Count
+
+	blockCollection := blockdb.Collection()
+	if err := blockCollection.QueryBlockByRange(&reply.Blocks, start, end); err != nil {
+		slog.Error("Failed to query block by block range.",
+			"start", start, "end", end, "err", err)
 	}
 }
 
