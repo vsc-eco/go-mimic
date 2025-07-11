@@ -16,10 +16,12 @@ type accountPrivateKeys struct {
 	ActiveKey  string `json:"active_key,omitempty"`
 }
 
+// the call to `GetSeedAccounts` stores the users' private keys in a
+// global map for this function to read.
 func GetPrivateKey(username string) (*crypto.HiveKeySet, error) {
 	k, ok := privateKeyMap[username]
 	if !ok {
-		return nil, fmt.Errorf("Private key not loaded for %s.", username)
+		return nil, fmt.Errorf("user not found %s.", username)
 	}
 	return &k, nil
 }
@@ -44,41 +46,32 @@ func GetSeedAccounts() ([]Account, error) {
 			Name: username,
 			Active: AccountAuthority{
 				WeightThreshold: 1,
-				AccountAuths: []AccountAuth{{
-					Account: username,
-					Weight:  1,
-				}},
+				AccountAuths:    []AccountAuth{},
 				KeyAuths: []KeyAuth{{
-					PublicKey: keySet.ActiveKey().PublicKeyHex(),
+					PublicKey: keySet.ActiveKey().PublicKeyWIF(),
 					Weight:    1,
 				}},
 			},
 
 			Owner: AccountAuthority{
 				WeightThreshold: 1,
-				AccountAuths: []AccountAuth{{
-					Account: username,
-					Weight:  1,
-				}},
+				AccountAuths:    []AccountAuth{},
 				KeyAuths: []KeyAuth{{
-					PublicKey: keySet.OwnerKey().PublicKeyHex(),
+					PublicKey: keySet.OwnerKey().PublicKeyWIF(),
 					Weight:    1,
 				}},
 			},
 
 			Posting: AccountAuthority{
 				WeightThreshold: 1,
-				AccountAuths: []AccountAuth{{
-					Account: username,
-					Weight:  1,
-				}},
+				AccountAuths:    []AccountAuth{},
 				KeyAuths: []KeyAuth{{
-					PublicKey: keySet.PostingKey().PublicKeyHex(),
+					PublicKey: keySet.PostingKey().PublicKeyWIF(),
 					Weight:    1,
 				}},
 			},
 
-			MemoKey: keySet.MemoKey(),
+			MemoKey: keySet.MemoKey().PublicKeyWIF(),
 		}
 	}
 

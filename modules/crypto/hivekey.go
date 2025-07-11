@@ -32,7 +32,7 @@ type HiveKeySet struct {
 	ownerKey   hiveKey
 	activeKey  hiveKey
 	postingKey hiveKey
-	memoKey    string
+	memoKey    hiveKey
 }
 
 func MakeHiveKeySet(account, password string) HiveKeySet {
@@ -54,13 +54,12 @@ func MakeHiveKeySet(account, password string) HiveKeySet {
 		postingKeyRole,
 	)
 
-	memoKeyParts := sha256.Sum256(slices.Concat(
-		[]byte(account),
-		[]byte(password),
-		[]byte(memoKeyRole),
-	))
-
-	key.memoKey = hex.EncodeToString(memoKeyParts[:])
+	key.memoKey = makeHiveKey(
+		nil,
+		account,
+		password,
+		memoKeyRole,
+	)
 
 	return key
 }
@@ -68,7 +67,7 @@ func MakeHiveKeySet(account, password string) HiveKeySet {
 func (h *HiveKeySet) OwnerKey() *hiveKey   { return &h.ownerKey }
 func (h *HiveKeySet) ActiveKey() *hiveKey  { return &h.activeKey }
 func (h *HiveKeySet) PostingKey() *hiveKey { return &h.postingKey }
-func (h *HiveKeySet) MemoKey() string      { return h.memoKey }
+func (h *HiveKeySet) MemoKey() *hiveKey    { return &h.memoKey }
 
 type hiveKey struct {
 	pubKey  *btcec.PublicKey
