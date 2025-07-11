@@ -20,9 +20,9 @@ const (
 )
 
 type HiveKeySet struct {
-	ownerKey   hiveKey
-	activeKey  hiveKey
-	postingKey hiveKey
+	ownerKey   HiveKey
+	activeKey  HiveKey
+	postingKey HiveKey
 	memoKey    string
 }
 
@@ -32,14 +32,14 @@ func MakeHiveKeySet(account, password string) HiveKeySet {
 	key.ownerKey = makeHiveKey(nil, account, password, ownerKeyRole)
 
 	key.activeKey = makeHiveKey(
-		key.ownerKey.privKey.Serialize(),
+		key.ownerKey.PrivKey.Serialize(),
 		account,
 		password,
 		activeKeyRole,
 	)
 
 	key.postingKey = makeHiveKey(
-		key.ownerKey.privKey.Serialize(),
+		key.ownerKey.PrivKey.Serialize(),
 		account,
 		password,
 		postingKeyRole,
@@ -56,28 +56,28 @@ func MakeHiveKeySet(account, password string) HiveKeySet {
 	return key
 }
 
-func (h *HiveKeySet) OwnerKey() *hiveKey   { return &h.ownerKey }
-func (h *HiveKeySet) ActiveKey() *hiveKey  { return &h.activeKey }
-func (h *HiveKeySet) PostingKey() *hiveKey { return &h.postingKey }
+func (h *HiveKeySet) OwnerKey() *HiveKey   { return &h.ownerKey }
+func (h *HiveKeySet) ActiveKey() *HiveKey  { return &h.activeKey }
+func (h *HiveKeySet) PostingKey() *HiveKey { return &h.postingKey }
 func (h *HiveKeySet) MemoKey() string      { return h.memoKey }
 
-type hiveKey struct {
-	pubKey  *btcec.PublicKey
-	privKey *btcec.PrivateKey
+type HiveKey struct {
+	PubKey  *btcec.PublicKey
+	PrivKey *btcec.PrivateKey
 }
 
-func (h *hiveKey) PublicKeyHex() string {
-	return hex.EncodeToString(h.pubKey.SerializeCompressed())
+func (h *HiveKey) PublicKeyHex() string {
+	return hex.EncodeToString(h.PubKey.SerializeCompressed())
 }
 
-func (h *hiveKey) Sign(message []byte) ([]byte, error) {
+func (h *HiveKey) Sign(message []byte) ([]byte, error) {
 	msgHash := sha256.Sum256(message)
-	return ecdsa.SignASN1(rand.Reader, h.privKey.ToECDSA(), msgHash[:])
+	return ecdsa.SignASN1(rand.Reader, h.PrivKey.ToECDSA(), msgHash[:])
 }
 
-func (h *hiveKey) Verify(message, signature []byte) bool {
+func (h *HiveKey) Verify(message, signature []byte) bool {
 	msgHash := sha256.Sum256(message)
-	return ecdsa.VerifyASN1(h.pubKey.ToECDSA(), msgHash[:], signature)
+	return ecdsa.VerifyASN1(h.PubKey.ToECDSA(), msgHash[:], signature)
 }
 
 // Hive's implementation for key generation
@@ -87,7 +87,7 @@ func makeHiveKey(
 	keyPart []byte,
 	account, password string,
 	role keyRole,
-) hiveKey {
+) HiveKey {
 	buf := sha256.Sum256(slices.Concat(
 		keyPart,
 		[]byte(account),
@@ -95,8 +95,8 @@ func makeHiveKey(
 		[]byte(role),
 	))
 
-	key := hiveKey{}
-	key.privKey, key.pubKey = btcec.PrivKeyFromBytes(buf[:])
+	key := HiveKey{}
+	key.PrivKey, key.PubKey = btcec.PrivKeyFromBytes(buf[:])
 
 	return key
 }
