@@ -11,6 +11,7 @@ import (
 	"github.com/go-chi/httplog/v3"
 
 	"mimic/modules/api/services"
+	"mimic/modules/db/mimic/blockdb"
 	// ← v1 import path
 	// ← v1 JSON codec
 )
@@ -153,13 +154,13 @@ func (s *APIServer) Init() {
 
 func (s *APIServer) Start() {
 
-	service := &services.Condenser{}
+	condenser := services.NewCondenser(blockdb.Collection())
 	rcService := &services.RcApi{}
 	blockApi := &services.BlockAPI{}
 	accountHistoryApi := &services.AccountHistoryApi{}
 	broadcastOps := &services.BroadcastOps{}
 
-	s.RegisterService(service, "condenser_api")
+	s.RegisterService(condenser, "condenser_api")
 	s.RegisterService(rcService, "rc_api")
 	s.RegisterService(blockApi, "block_api")
 	s.RegisterService(accountHistoryApi, "account_history_api")

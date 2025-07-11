@@ -58,7 +58,7 @@ func (p *Producer) produceBlocks(interval time.Duration) {
 	defer cancel()
 
 	latestBlock := &producerBlock{&blockdb.HiveBlock{}}
-	err := blockdb.Collection().FindLatestBlock(ctx, latestBlock.HiveBlock)
+	err := blockdb.Collection().QueryHeadBlock(ctx, latestBlock.HiveBlock)
 	if err != nil {
 		panic(err)
 	}

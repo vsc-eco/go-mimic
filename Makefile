@@ -3,6 +3,7 @@ default:
 
 dev:
 	air
+	rm /tmp/go-mimic
 
 check:
 	go build -o /tmp/go-mimic ./cmd/main.go && echo "build ok."

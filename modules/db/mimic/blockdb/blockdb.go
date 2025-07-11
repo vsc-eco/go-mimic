@@ -17,6 +17,7 @@ import (
 type BlockQuery interface {
 	QueryBlockByBlockNum(*HiveBlock, int64) error
 	QueryBlockByRange(blocks *[]HiveBlock, start, end int) error
+	QueryHeadBlock(context.Context, *HiveBlock) error
 }
 
 type blockCollection struct {
@@ -114,20 +115,4 @@ func (blks *blockCollection) InsertBlock(blockData *HiveBlock) error {
 
 	_, err := blks.InsertOne(ctx, blockData)
 	return err
-}
-
-func (b *blockCollection) FindLatestBlock(
-	ctx context.Context,
-	buf *HiveBlock,
-) error {
-	// since timestamp is encoded with mongodb, can query for lastest inserted ID
-	queryOpts := options.FindOne()
-	queryOpts.SetSort(bson.M{"_id": -1})
-
-	result := b.Collection.FindOne(ctx, bson.D{}, queryOpts)
-	if result.Err() != nil {
-		return result.Err()
-	}
-
-	return result.Decode(&buf)
 }
