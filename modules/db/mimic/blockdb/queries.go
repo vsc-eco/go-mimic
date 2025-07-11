@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func (b *blockCollection) QueryBlockByBlockNum(
@@ -41,4 +42,20 @@ func (b *blockCollection) QueryBlockByRange(
 	defer cursor.Close(ctx)
 
 	return cursor.All(ctx, blocks)
+}
+
+func (b *blockCollection) QueryHeadBlock(
+	ctx context.Context,
+	buf *HiveBlock,
+) error {
+	// since timestamp is encoded with mongodb, can query for lastest inserted ID
+	queryOpts := options.FindOne()
+	queryOpts.SetSort(bson.M{"_id": -1})
+
+	result := b.Collection.FindOne(ctx, bson.D{}, queryOpts)
+	if result.Err() != nil {
+		return result.Err()
+	}
+
+	return result.Decode(&buf)
 }

@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"mimic/mock"
 	"mimic/modules/db/mimic/accountdb"
+	"mimic/modules/db/mimic/blockdb"
 	cdb "mimic/modules/db/mimic/condenserdb"
 	"mimic/modules/db/mimic/transactiondb"
 	"mimic/modules/producers"
@@ -13,28 +14,11 @@ import (
 	"time"
 )
 
-type TestMethodArgs struct {
-	A int `json:"a"`
-	B int `json:"b"`
+type Condenser struct {
+	db blockdb.BlockQuery
 }
 
-// TestMethodReply is the output from exampleservice.test_method.
-type TestMethodReply struct {
-	Sum     int `json:"sum"`
-	Product int `json:"product"`
-}
-
-type Condenser struct{}
-
-func (t *Condenser) GetBlock(
-	args *TestMethodArgs,
-	reply *TestMethodReply,
-) error {
-	// Fill reply pointer to send the data back
-	reply.Sum = args.A + args.B + 1
-	reply.Product = args.A * args.B
-	return nil
-}
+func NewCondenser(db blockdb.BlockQuery) *Condenser { return &Condenser{db} }
 
 type GetAccountsArgs [][]string
 
@@ -62,15 +46,44 @@ func (t *Condenser) GetDynamicGlobalProperties(
 	args *[]string,
 	reply *cdb.GlobalProperties,
 ) {
-	var (
-		mockApiData = "condenser_api.get_dynamic_global_properties"
-	)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
 
-	if err := mock.GetMockData(reply, mockApiData); err != nil {
-		slog.Error("Failed to read mock data",
-			"mock-json", mockApiData, "err", err)
+	headBlock := blockdb.HiveBlock{}
+	if err := t.db.QueryHeadBlock(ctx, &headBlock); err != nil {
+		slog.Error("failed to query database for head block.", "err", err)
 		return
 	}
+
+	*reply = cdb.GlobalProperties{
+		HeadBlockNumber: int64(headBlock.BlockNum),
+		HeadBlockID:     headBlock.BlockID,
+		Time:            headBlock.Timestamp,
+		CurrentWitness:  headBlock.Witness,
+		// TODO: what do i do with these fields?
+		TotalPow:                     "",
+		NumPowWitnesses:              0,
+		VirtualSupply:                "",
+		CurrentSupply:                "",
+		ConfidentialSupply:           "",
+		CurrentHbdSupply:             "",
+		ConfidentialHbdSupply:        "",
+		TotalVestingFundHive:         "",
+		TotalVestingShares:           "",
+		TotalRewardFundHive:          "",
+		TotalRewardShares2:           "",
+		PendingRewardedVestingShares: "",
+		PendingRewardedVestingHive:   "",
+		HbdInterestRate:              0,
+		HbdPrintRate:                 0,
+		MaximumBlockSize:             0,
+		CurrentAslot:                 0,
+		RecentSlotsFilled:            "",
+		ParticipationCount:           0,
+		LastIrreversibleBlockNum:     0,
+		VotePowerReserveRate:         0,
+	}
+
 }
 
 // get_current_median_history_price
@@ -244,7 +257,6 @@ func (c *Condenser) BroadcastTransactionSynchronous(
 }
 
 func (t *Condenser) Expose(rm RegisterMethod) {
-	rm("get_block", "GetBlock")
 	rm("get_dynamic_global_properties", "GetDynamicGlobalProperties")
 	rm("get_current_median_history_price", "GetCurrentMedianHistoryPrice")
 	rm("get_reward_fund", "GetRewardFund")
