@@ -57,8 +57,8 @@ func TestGetDynamicGlobalProperties(t *testing.T) {
 	srv.GetDynamicGlobalProperties(&args, response)
 
 	t.Run("it propagates the correct data.", func(t *testing.T) {
-		db.QueryHeadBlock(context.TODO(), &headBlock)
-
+		err := db.QueryHeadBlock(context.TODO(), &headBlock)
+		assert.Nil(t, err)
 		assert.Equal(t, headBlock.BlockID, response.HeadBlockID)
 		assert.Equal(t, headBlock.BlockNum, response.HeadBlockNumber)
 		assert.Equal(t, headBlock.Timestamp, response.Time)

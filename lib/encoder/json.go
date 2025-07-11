@@ -36,7 +36,7 @@ func JsonArrayDeserialize(buf any, rawJson []byte) error {
 	}
 
 	if len(rawValues) != canSetFieldCounter {
-		return errors.New("array item and struct pub field count mismatch.")
+		return errors.New("array item and struct pub field count mismatch")
 	}
 
 	// iterate + set fields
