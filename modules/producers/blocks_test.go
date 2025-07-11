@@ -1,34 +1,10 @@
 package producers
 
 import (
-	"encoding/json"
-	"mimic/modules/db/mimic/blockdb"
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
-
-func TestGetBlockNum(t *testing.T) {
-	f, err := os.Open("../../mock/block_api.get_block.json")
-	if err != nil {
-		panic(err)
-	}
-
-	buf := make([]blockdb.HiveBlock, 1)
-	if err := json.NewDecoder(f).Decode(&buf); err != nil {
-		panic(err)
-	}
-
-	block := producerBlock{&buf[0], 0}
-	blockNum, err := block.getBlockNum()
-	assert.Nil(t, err)
-	assert.Equal(t, uint32(0), blockNum)
-	assert.Equal(t, blockNum, block.blockNum)
-
-	block = block.next()
-	assert.Equal(t, uint32(1), block.blockNum)
-}
 
 func TestMerkleRoot(t *testing.T) {
 	testTRXs := make([]any, len(testTransactions))

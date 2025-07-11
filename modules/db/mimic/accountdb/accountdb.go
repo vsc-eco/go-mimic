@@ -5,7 +5,6 @@ import (
 	"log/slog"
 	"mimic/lib/utils"
 	"mimic/modules/db"
-	"mimic/modules/db/mimic"
 	"time"
 
 	"github.com/chebyrash/promise"
@@ -75,11 +74,8 @@ func (accountdb *AccountDB) Stop() error {
 	return nil
 }
 
-func New(d *mimic.MimicDb) *AccountDB {
-	collection.(*AccountDB).Collection = db.NewCollection(
-		d.DbInstance,
-		"accounts",
-	)
+func New(d *mongo.Database) *AccountDB {
+	collection.(*AccountDB).Collection = db.NewCollection(d, "accounts")
 	return collection.(*AccountDB)
 }
 

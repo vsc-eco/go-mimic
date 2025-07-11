@@ -5,7 +5,6 @@ import (
 	"log/slog"
 	"mimic/lib/utils"
 	"mimic/modules/db"
-	"mimic/modules/db/mimic"
 	"time"
 
 	"github.com/chebyrash/promise"
@@ -26,9 +25,9 @@ type blockCollection struct {
 
 var collection BlockQuery = nil
 
-func New(d *mimic.MimicDb) *blockCollection {
+func New(d *mongo.Database) *blockCollection {
 	collection = &blockCollection{
-		db.NewCollection(d.DbInstance, "blocks"),
+		db.NewCollection(d, "blocks"),
 	}
 
 	return collection.(*blockCollection)

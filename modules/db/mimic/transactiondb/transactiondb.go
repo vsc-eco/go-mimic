@@ -5,7 +5,6 @@ import (
 	"log/slog"
 	"mimic/lib/utils"
 	"mimic/modules/db"
-	"mimic/modules/db/mimic"
 	"time"
 
 	"github.com/chebyrash/promise"
@@ -47,8 +46,8 @@ func (transactioncollection *TransactionCollection) Stop() error {
 	return nil
 }
 
-func New(d *mimic.MimicDb) *TransactionCollection {
-	trxDb.Collection = db.NewCollection(d.DbInstance, "transactions")
+func New(d *mongo.Database) *TransactionCollection {
+	trxDb.Collection = db.NewCollection(d, "transactions")
 	return trxDb
 }
 

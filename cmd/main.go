@@ -54,9 +54,9 @@ func main() {
 	plugins := []aggregate.Plugin{
 		// hiveBlocks,
 		// stateDb,
-		blockdb.New(mimicDb),
-		accountdb.New(mimicDb),
-		transactiondb.New(mimicDb),
+		blockdb.New(mimicDb.Database),
+		accountdb.New(mimicDb.Database),
+		transactiondb.New(mimicDb.Database),
 		producers.New(),
 	}
 
