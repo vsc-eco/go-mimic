@@ -1,30 +1,19 @@
 package transactions
 
-import "github.com/vsc-eco/hivego"
+import (
+	"mimic/modules/api/services"
+)
 
-type TransactionCore struct {
-	TransactionQueue []hivego.HiveTransaction
+type Transaction[Operations []any] struct {
+	RefBlockNum    uint32     `json:"ref_block_num"`
+	RefBlockPrefix uint32     `json:"ref_block_prefix"`
+	Expiration     string     `json:"expiration"`
+	Operations     Operations `json:"operations"`
+	Extensions     []any      `json:"extensions"`
+	Signatures     []string   `json:"signatures"`
 }
 
-// Fill out
-func (t *TransactionCore) PostTransaction() {
-
+type transactionBuilder struct {
 }
 
-func (t *TransactionCore) ValidateTransaction() {
-
-}
-
-func (t *TransactionCore) ValidationExpiration() {
-
-}
-
-func (t *TransactionCore) ClearQueue() {
-	t.TransactionQueue = []hivego.HiveTransaction{}
-}
-
-func New() *TransactionCore {
-	return &TransactionCore{
-		TransactionQueue: []hivego.HiveTransaction{},
-	}
-}
+func TransactionBuilder(block *services.GlobalProperties)

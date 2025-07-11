@@ -41,38 +41,10 @@ func (t *Condenser) GetAccounts(
 	}
 }
 
-type GlobalProperties struct {
-	HeadBlockNumber              uint32 `json:"head_block_number"`
-	HeadBlockID                  string `json:"head_block_id"`
-	Time                         string `json:"time"`
-	CurrentWitness               string `json:"current_witness"`
-	TotalPow                     string `json:"total_pow"`
-	NumPowWitnesses              int64  `json:"num_pow_witnesses"`
-	VirtualSupply                string `json:"virtual_supply"`
-	CurrentSupply                string `json:"current_supply"`
-	ConfidentialSupply           string `json:"confidential_supply"`
-	CurrentHbdSupply             string `json:"current_hbd_supply"`
-	ConfidentialHbdSupply        string `json:"confidential_hbd_supply"`
-	TotalVestingFundHive         string `json:"total_vesting_fund_hive"`
-	TotalVestingShares           string `json:"total_vesting_shares"`
-	TotalRewardFundHive          string `json:"total_reward_fund_hive"`
-	TotalRewardShares2           string `json:"total_reward_shares2"`
-	PendingRewardedVestingShares string `json:"pending_rewarded_vesting_shares"`
-	PendingRewardedVestingHive   string `json:"pending_rewarded_vesting_hive"`
-	HbdInterestRate              int64  `json:"hbd_interest_rate"`
-	HbdPrintRate                 int64  `json:"hbd_print_rate"`
-	MaximumBlockSize             int64  `json:"maximum_block_size"`
-	CurrentAslot                 int64  `json:"current_aslot"`
-	RecentSlotsFilled            string `json:"recent_slots_filled"`
-	ParticipationCount           int64  `json:"participation_count"`
-	LastIrreversibleBlockNum     int64  `json:"last_irreversible_block_num"`
-	VotePowerReserveRate         int64  `json:"vote_power_reserve_rate"`
-}
-
 // get_dynamic_global_properties
 func (t *Condenser) GetDynamicGlobalProperties(
 	_ *[]string,
-	reply *GlobalProperties,
+	reply *cdb.GlobalProperties,
 ) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
@@ -83,7 +55,7 @@ func (t *Condenser) GetDynamicGlobalProperties(
 		return
 	}
 
-	*reply = GlobalProperties{
+	*reply = cdb.GlobalProperties{
 		HeadBlockNumber: headBlock.BlockNum,
 		HeadBlockID:     headBlock.BlockID,
 		Time:            headBlock.Timestamp,
