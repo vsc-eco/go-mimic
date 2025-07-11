@@ -7,6 +7,7 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/btcsuite/btcd/btcutil/base58"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -95,6 +96,23 @@ func TestHiveKey(t *testing.T) {
 			assert.Nil(t, err)
 
 			assert.NotEqual(t, sig1, sig2)
+		},
+	)
+
+	t.Run(
+		"produce valid base58 encoding with bitcoin spec.",
+		func(t *testing.T) {
+			encodedKeyStr := key1.PublicKeyWIF()
+			assert.Equal(t, testnetPrefix, encodedKeyStr[:len(testnetPrefix)])
+
+			decodedKeyRaw, version, err := base58.CheckDecode(
+				encodedKeyStr[len(testnetPrefix):],
+			)
+			assert.Nil(t, err)
+			assert.Equal(t, btcTestnetP2PKHaddress, version)
+
+			rawKey := key1.pubKey.SerializeCompressed()
+			assert.Equal(t, rawKey, decodedKeyRaw)
 		},
 	)
 }

@@ -8,6 +8,7 @@ import (
 	"slices"
 
 	"github.com/btcsuite/btcd/btcec/v2"
+	"github.com/btcsuite/btcd/btcutil/base58"
 )
 
 type keyRole = string
@@ -17,6 +18,14 @@ const (
 	activeKeyRole  = keyRole("active")
 	ownerKeyRole   = keyRole("owner")
 	memoKeyRole    = keyRole("memo")
+
+	testnetPrefix string = "TST"
+
+	// encoding versions for bitcoin's base58 CheckEncode and CheckDecode
+	btcMainnetP2PKHaddress byte = 0x00
+	btcMainnetP2SHaddress  byte = 0x05
+	btcTestnetP2PKHaddress byte = 0x6F
+	btcPrivateKeyWIFformat byte = 0x80
 )
 
 type HiveKeySet struct {
@@ -68,6 +77,12 @@ type hiveKey struct {
 
 func (h *hiveKey) PublicKeyHex() string {
 	return hex.EncodeToString(h.pubKey.SerializeCompressed())
+}
+
+func (h *hiveKey) PublicKeyWIF() string {
+	buf := h.pubKey.SerializeCompressed()
+	encoded := base58.CheckEncode(buf, btcTestnetP2PKHaddress)
+	return testnetPrefix + encoded
 }
 
 func (h *hiveKey) Sign(message []byte) ([]byte, error) {
