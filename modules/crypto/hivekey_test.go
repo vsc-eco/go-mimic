@@ -28,21 +28,21 @@ func TestHiveKey(t *testing.T) {
 	t.Run("generates key pairs deterministically.", func(t *testing.T) {
 		assert.Equal(
 			t,
-			key1.pubKey.SerializeCompressed(),
-			key2.pubKey.SerializeCompressed(),
+			key1.PubKey.SerializeCompressed(),
+			key2.PubKey.SerializeCompressed(),
 			"public keys deterministically generated.",
 		)
 
 		assert.Equal(
 			t,
-			key1.privKey.Serialize(),
-			key2.privKey.Serialize(),
+			key1.PrivKey.Serialize(),
+			key2.PrivKey.Serialize(),
 			"private keys deterministically generated.",
 		)
 	})
 
 	t.Run("parses the private key correctly.", func(t *testing.T) {
-		keyBytes := key1.privKey.Serialize()
+		keyBytes := key1.PrivKey.Serialize()
 		privKey := sha256.Sum256(
 			slices.Concat(
 				nil,
