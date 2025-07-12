@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
+	"math/big"
 	"slices"
 
 	"github.com/btcsuite/btcd/btcec/v2"
@@ -17,6 +18,8 @@ const (
 	activeKeyRole  = keyRole("active")
 	ownerKeyRole   = keyRole("owner")
 	memoKeyRole    = keyRole("memo")
+
+	signatureCompactLen = 64
 )
 
 type HiveKeySet struct {
@@ -70,14 +73,45 @@ func (h *HiveKey) PublicKeyHex() string {
 	return hex.EncodeToString(h.PubKey.SerializeCompressed())
 }
 
+// the returned signature is in a compact format (64 bytes)
 func (h *HiveKey) Sign(message []byte) ([]byte, error) {
 	msgHash := sha256.Sum256(message)
-	return ecdsa.SignASN1(rand.Reader, h.PrivKey.ToECDSA(), msgHash[:])
+	r, s, err := ecdsa.Sign(rand.Reader, h.PrivKey.ToECDSA(), msgHash[:])
+	if err != nil {
+		return nil, err
+	}
+
+	sig := make([]byte, signatureCompactLen)
+	i := signatureCompactLen / 2
+
+	copy(sig[:i], r.Bytes())
+	copy(sig[i:], s.Bytes())
+
+	return sig, nil
 }
 
 func (h *HiveKey) Verify(message, signature []byte) bool {
-	msgHash := sha256.Sum256(message)
-	return ecdsa.VerifyASN1(h.PubKey.ToECDSA(), msgHash[:], signature)
+	if len(signature) != signatureCompactLen { // invalid signature
+		return false
+	}
+
+	r, s := big.Int{}, big.Int{}
+	r.SetBytes(stripZeroBytes(signature[:32]))
+	s.SetBytes(stripZeroBytes(signature[32:]))
+
+	hash := sha256.Sum256(message)
+
+	return ecdsa.Verify(h.PubKey.ToECDSA(), hash[:], &r, &s)
+}
+
+func stripZeroBytes(buf []byte) []byte {
+	i := len(buf) - 1
+	for ; i >= 0; i-- {
+		if buf[i] != 0 {
+			break
+		}
+	}
+	return buf[:i]
 }
 
 // Hive's implementation for key generation

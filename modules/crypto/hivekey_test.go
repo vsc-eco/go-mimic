@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"io"
+	mrand "math/rand"
 	"slices"
 	"testing"
 
@@ -54,11 +55,14 @@ func TestHiveKey(t *testing.T) {
 		assert.Equal(t, privKey[:], keyBytes)
 	})
 
-	t.Run("accepts valid signature", func(t *testing.T) {
-		message := makeMessage(1024)
-		sig, err := key1.Sign(message)
-		assert.Nil(t, err)
-		assert.True(t, key1.Verify(message, sig))
+	t.Run("signs/verifies valid signatures.", func(t *testing.T) {
+		for range 0xfff {
+			msg := makeMessage(mrand.Intn(0xffff))
+			sig, err := key1.Sign(msg)
+			assert.Nil(t, err)
+			assert.Equal(t, signatureCompactLen, len(sig))
+			assert.True(t, key1.Verify(msg, sig))
+		}
 	})
 
 	t.Run("rejects invalid signature", func(t *testing.T) {
