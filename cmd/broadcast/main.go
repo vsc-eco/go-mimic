@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"mimic/modules/api/services/broadcastops"
+	"mimic/modules/api/services/condenser"
 	"mimic/modules/db/mimic/accountdb"
 	"net/http"
 	"sync"
@@ -26,10 +26,10 @@ func main() {
 		go func(wg *sync.WaitGroup, account *accountdb.Account) {
 			defer wg.Done()
 
-			trx := broadcastops.BroadcastParam[broadcastops.AccountCreateParam]{
+			trx := condenser.BroadcastParam[condenser.AccountCreateParam]{
 				Action: "account_create",
-				Param: broadcastops.AccountCreateParam{
-					Fee: broadcastops.AccountCreateFee{
+				Param: condenser.AccountCreateParam{
+					Fee: condenser.AccountCreateFee{
 						Amount:    "0",
 						Precision: 3,
 						Nai:       "@@000000021",
@@ -60,7 +60,11 @@ func main() {
 			reqBody := bytes.NewBuffer(jsonEncoded)
 
 			cx := http.Client{}
-			res, err := cx.Post("http://localhost:3000", "application/json", reqBody)
+			res, err := cx.Post(
+				"http://localhost:3000",
+				"application/json",
+				reqBody,
+			)
 			if err != nil {
 				log.Fatal(err)
 			}

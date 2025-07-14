@@ -1,4 +1,4 @@
-package broadcastops
+package condenser
 
 import (
 	"encoding/json"

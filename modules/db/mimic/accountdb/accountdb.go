@@ -13,7 +13,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type AccountDBQueries interface {
+type AccountQuery interface {
 	InsertAccount(context.Context, *Account) error
 	QueryAccountByNames(context.Context, *[]Account, []string) error
 }
@@ -22,7 +22,7 @@ type AccountDB struct {
 	collection *mongo.Collection
 }
 
-var collection AccountDBQueries = &AccountDB{nil}
+var collection AccountQuery = &AccountDB{nil}
 
 func Collection() *AccountDB {
 	return collection.(*AccountDB)

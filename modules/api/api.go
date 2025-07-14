@@ -3,16 +3,16 @@ package api
 import (
 	"encoding/json"
 	"log/slog"
+	"mimic/modules/api/services"
+	"mimic/modules/api/services/condenser"
+	"mimic/modules/db/mimic/accountdb"
+	"mimic/modules/db/mimic/blockdb"
 	"net/http"
 	"reflect"
 	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/httplog/v3"
-
-	"mimic/modules/api/services"
-	"mimic/modules/api/services/broadcastops"
-	"mimic/modules/db/mimic/blockdb"
 	// ← v1 import path
 	// ← v1 JSON codec
 )
@@ -154,15 +154,15 @@ func (s *APIServer) Init() {
 }
 
 func (s *APIServer) Start() {
-
-	condenser := services.NewCondenser(blockdb.Collection())
 	rcService := &services.RcApi{}
 	blockApi := &services.BlockAPI{}
 	accountHistoryApi := &services.AccountHistoryApi{}
-	broadcastAccountOps := &broadcastops.BroadcastOpsAccount{}
+	condenser := &condenser.Condenser{
+		BlockDB:   blockdb.Collection(),
+		AccountDB: accountdb.Collection(),
+	}
 
 	s.RegisterService(condenser, "condenser_api")
-	s.RegisterService(broadcastAccountOps, "condenser_api")
 	s.RegisterService(rcService, "rc_api")
 	s.RegisterService(blockApi, "block_api")
 	s.RegisterService(accountHistoryApi, "account_history_api")
