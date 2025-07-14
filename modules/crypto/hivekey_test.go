@@ -58,7 +58,7 @@ func TestHiveKey(t *testing.T) {
 			msg := makeMessage(mrand.Intn(0xffff))
 			sig, err := key1.Sign(msg)
 			assert.Nil(t, err)
-			assert.Equal(t, signatureCompactLen, len(sig))
+			assert.Equal(t, signatureLen, len(sig))
 
 			pubKeyWif := key1.GetPublicKeyString()
 			sigOk, err := Verify(*pubKeyWif, msg, sig)

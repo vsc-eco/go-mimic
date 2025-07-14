@@ -37,8 +37,12 @@ func GetSeedAccounts() ([]Account, error) {
 	for i, account := range accounts {
 		username, password := account.Username, account.Password
 
-		keySet := crypto.MakeHiveKeySet(username, password)
-		privateKeyMap[username] = keySet
+		keySet, err := crypto.MakeHiveKeySet(username, password)
+		if err != nil {
+			return nil, err
+		}
+
+		privateKeyMap[username] = *keySet
 
 		accountBuf[i] = Account{
 			Name: username,
