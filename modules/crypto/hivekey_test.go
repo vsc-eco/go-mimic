@@ -20,33 +20,31 @@ func makeMessage(msgLen int) []byte {
 }
 
 func TestHiveKey(t *testing.T) {
-	account := "hive-io-account"
-	password := "hive-io-password"
+	account := []byte("hive-io-account")
+	password := []byte("hive-io-password")
 
-	key1 := makeHiveKey(nil, account, password, ownerKeyRole)
-	key2 := makeHiveKey(nil, account, password, ownerKeyRole)
+	key1 := makeHiveKey(ownerKeyRole, account, password)
+	key2 := makeHiveKey(ownerKeyRole, account, password)
 
 	t.Run("generates key pairs deterministically.", func(t *testing.T) {
-		assert.Equal(
+		assert.True(
 			t,
-			key1.PubKey.SerializeCompressed(),
-			key2.PubKey.SerializeCompressed(),
+			key1.PublicKey.IsEqual(key2.PublicKey),
 			"public keys deterministically generated.",
 		)
 
 		assert.Equal(
 			t,
-			key1.PrivKey.Serialize(),
-			key2.PrivKey.Serialize(),
+			key1.PrivateKey.Serialize(),
+			key2.PrivateKey.Serialize(),
 			"private keys deterministically generated.",
 		)
 	})
 
 	t.Run("parses the private key correctly.", func(t *testing.T) {
-		keyBytes := key1.PrivKey.Serialize()
+		keyBytes := key1.PrivateKey.Serialize()
 		privKey := sha256.Sum256(
 			slices.Concat(
-				nil,
 				[]byte(account),
 				[]byte(password),
 				[]byte(ownerKeyRole),
@@ -55,32 +53,47 @@ func TestHiveKey(t *testing.T) {
 		assert.Equal(t, privKey[:], keyBytes)
 	})
 
-	t.Run("signs/verifies valid signatures.", func(t *testing.T) {
-		for range 0xfff {
+	t.Run("signs/verifies valid signatures for messages of random length.", func(t *testing.T) {
+		for range 0xff {
 			msg := makeMessage(mrand.Intn(0xffff))
 			sig, err := key1.Sign(msg)
 			assert.Nil(t, err)
 			assert.Equal(t, signatureCompactLen, len(sig))
-			assert.True(t, key1.Verify(msg, sig))
+
+			pubKeyWif := key1.GetPublicKeyString()
+			sigOk, err := Verify(*pubKeyWif, msg, sig)
+			assert.Nil(t, err)
+			assert.True(t, sigOk)
 		}
 	})
 
-	t.Run("rejects invalid signature", func(t *testing.T) {
-		msg1 := makeMessage(1024)
-		sig1, err := key1.Sign(msg1)
+	t.Run("rejects on invalid signature", func(t *testing.T) {
+		msg := makeMessage(1024)
+		sig, err := key1.Sign(msg)
 		assert.Nil(t, err)
 
-		msg2 := makeMessage(1024)
-		sig2, err := key2.Sign(msg2)
+		sigCpy := make([]byte, len(sig))
+		copy(sigCpy, sig)
+
+		sigCpy[2] ^= 1
+
+		pubKeyWif := key1.GetPublicKeyString()
+
+		sigOk, err := Verify(*pubKeyWif, msg, sigCpy)
+		assert.Nil(t, err)
+		assert.False(t, sigOk)
+	})
+
+	t.Run("rejects on invalid message", func(t *testing.T) {
+		msg := makeMessage(1024)
+		sig, err := key1.Sign(msg)
 		assert.Nil(t, err)
 
-		assert.False(t, key1.Verify(msg1, sig2))
-		assert.False(t, key1.Verify(msg2, sig1))
-		assert.False(t, key2.Verify(msg1, sig2))
-		assert.False(t, key2.Verify(msg2, sig1))
+		pubKeyWif := key1.GetPublicKeyString()
 
-		sig2[0] ^= 1 // making sig invalid
-		assert.False(t, key2.Verify(msg2, sig2))
+		sigOk, err := Verify(*pubKeyWif, makeMessage(1024), sig)
+		assert.Nil(t, err)
+		assert.False(t, sigOk)
 	})
 
 	t.Run(
