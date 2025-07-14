@@ -1,54 +1,66 @@
 package crypto
 
 import (
-	"crypto/ecdsa"
-	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
+	"fmt"
 	"slices"
 
-	"github.com/btcsuite/btcd/btcec/v2"
+	"github.com/decred/dcrd/dcrec/secp256k1/v2"
+	"github.com/vsc-eco/hivego"
 )
 
 type keyRole = string
+
+type HiveKey struct {
+	*hivego.KeyPair
+}
 
 const (
 	postingKeyRole = keyRole("posting")
 	activeKeyRole  = keyRole("active")
 	ownerKeyRole   = keyRole("owner")
 	memoKeyRole    = keyRole("memo")
+
+	signatureCompactLen = 65
 )
 
 type HiveKeySet struct {
-	ownerKey   hiveKey
-	activeKey  hiveKey
-	postingKey hiveKey
+	ownerKey   HiveKey
+	activeKey  HiveKey
+	postingKey HiveKey
 	memoKey    string
 }
 
 func MakeHiveKeySet(account, password string) HiveKeySet {
 	key := HiveKeySet{}
 
-	key.ownerKey = makeHiveKey(nil, account, password, ownerKeyRole)
+	var (
+		accountBytes  = []byte(account)
+		passwordBytes = []byte(password)
+	)
+
+	key.ownerKey = makeHiveKey(ownerKeyRole, accountBytes, passwordBytes)
 
 	key.activeKey = makeHiveKey(
-		key.ownerKey.privKey.Serialize(),
-		account,
-		password,
 		activeKeyRole,
+		key.ownerKey.PrivateKey.Serialize(),
+		accountBytes,
+		passwordBytes,
 	)
 
 	key.postingKey = makeHiveKey(
-		key.ownerKey.privKey.Serialize(),
-		account,
-		password,
 		postingKeyRole,
+		key.ownerKey.PrivateKey.Serialize(),
+		accountBytes,
+		passwordBytes,
 	)
 
 	memoKeyParts := sha256.Sum256(slices.Concat(
-		[]byte(account),
-		[]byte(password),
 		[]byte(memoKeyRole),
+		accountBytes,
+		passwordBytes,
 	))
 
 	key.memoKey = hex.EncodeToString(memoKeyParts[:])
@@ -56,47 +68,52 @@ func MakeHiveKeySet(account, password string) HiveKeySet {
 	return key
 }
 
-func (h *HiveKeySet) OwnerKey() *hiveKey   { return &h.ownerKey }
-func (h *HiveKeySet) ActiveKey() *hiveKey  { return &h.activeKey }
-func (h *HiveKeySet) PostingKey() *hiveKey { return &h.postingKey }
+func (h *HiveKeySet) OwnerKey() *HiveKey   { return &h.ownerKey }
+func (h *HiveKeySet) ActiveKey() *HiveKey  { return &h.activeKey }
+func (h *HiveKeySet) PostingKey() *HiveKey { return &h.postingKey }
 func (h *HiveKeySet) MemoKey() string      { return h.memoKey }
 
-type hiveKey struct {
-	pubKey  *btcec.PublicKey
-	privKey *btcec.PrivateKey
+func (h *HiveKey) Sign(message []byte) ([]byte, error) {
+	if h.PrivateKey == nil {
+		return nil, errors.New("nil private key.")
+	}
+
+	digest := sha256.Sum256(message)
+	return secp256k1.SignCompact(h.PrivateKey, digest[:], true)
 }
 
-func (h *hiveKey) PublicKeyHex() string {
-	return hex.EncodeToString(h.pubKey.SerializeCompressed())
-}
+func Verify(pubKeyWif string, message, signature []byte) (bool, error) {
+	pubKey, err := hivego.DecodePublicKey(pubKeyWif)
+	if err != nil {
+		return false, fmt.Errorf("failed to decode public key: %v", err)
+	}
 
-func (h *hiveKey) Sign(message []byte) ([]byte, error) {
-	msgHash := sha256.Sum256(message)
-	return ecdsa.SignASN1(rand.Reader, h.privKey.ToECDSA(), msgHash[:])
-}
+	digest := sha256.Sum256(message)
 
-func (h *hiveKey) Verify(message, signature []byte) bool {
-	msgHash := sha256.Sum256(message)
-	return ecdsa.VerifyASN1(h.pubKey.ToECDSA(), msgHash[:], signature)
+	recoveredPubKey, compacted, err := secp256k1.RecoverCompact(signature, digest[:])
+	if err != nil {
+		return false, fmt.Errorf("failed to decode signature key: %v", err)
+	}
+
+	if !compacted {
+		return false, errors.New("invalid signature format")
+	}
+
+	return recoveredPubKey.IsEqual(pubKey), nil
 }
 
 // Hive's implementation for key generation
 // https://gitlab.syncad.com/hive/devportal/-/blob/master/tutorials/python/34_password_key_change/index.py
 // https://github.com/holgern/beem/blob/2026833a836007e45f16395a9ca3b31d02e98f87/beemgraphenebase/account.py#L33
 func makeHiveKey(
-	keyPart []byte,
-	account, password string,
 	role keyRole,
-) hiveKey {
-	buf := sha256.Sum256(slices.Concat(
-		keyPart,
-		[]byte(account),
-		[]byte(password),
-		[]byte(role),
-	))
+	keyParts ...[]byte,
+) HiveKey {
+	buf := slices.Concat(
+		keyParts...,
+	)
 
-	key := hiveKey{}
-	key.privKey, key.pubKey = btcec.PrivKeyFromBytes(buf[:])
+	digest := sha256.Sum256(append(buf, []byte(role)...))
 
-	return key
+	return HiveKey{hivego.KeyPairFromBytes(digest[:])}
 }

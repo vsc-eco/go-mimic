@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"mimic/modules/db/mimic/blockdb"
+	"mimic/modules/db/mimic/condenserdb"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -51,14 +52,14 @@ func TestGetDynamicGlobalProperties(t *testing.T) {
 	srv := NewCondenser(db)
 
 	args := make([]string, 0)
-	response := &GlobalProperties{}
+	response := &condenserdb.GlobalProperties{}
 	headBlock := blockdb.HiveBlock{}
 
 	srv.GetDynamicGlobalProperties(&args, response)
 
 	t.Run("it propagates the correct data.", func(t *testing.T) {
-		db.QueryHeadBlock(context.TODO(), &headBlock)
-
+		err := db.QueryHeadBlock(context.TODO(), &headBlock)
+		assert.Nil(t, err)
 		assert.Equal(t, headBlock.BlockID, response.HeadBlockID)
 		assert.Equal(t, headBlock.BlockNum, response.HeadBlockNumber)
 		assert.Equal(t, headBlock.Timestamp, response.Time)
