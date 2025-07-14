@@ -49,7 +49,7 @@ func GetSeedAccounts() ([]Account, error) {
 					Weight:  1,
 				}},
 				KeyAuths: []KeyAuth{{
-					PublicKey: keySet.ActiveKey().PublicKeyHex(),
+					PublicKey: *keySet.ActiveKey().GetPublicKeyString(),
 					Weight:    1,
 				}},
 			},
@@ -61,7 +61,7 @@ func GetSeedAccounts() ([]Account, error) {
 					Weight:  1,
 				}},
 				KeyAuths: []KeyAuth{{
-					PublicKey: keySet.OwnerKey().PublicKeyHex(),
+					PublicKey: *keySet.OwnerKey().GetPublicKeyString(),
 					Weight:    1,
 				}},
 			},
@@ -73,7 +73,7 @@ func GetSeedAccounts() ([]Account, error) {
 					Weight:  1,
 				}},
 				KeyAuths: []KeyAuth{{
-					PublicKey: keySet.PostingKey().PublicKeyHex(),
+					PublicKey: *keySet.PostingKey().GetPublicKeyString(),
 					Weight:    1,
 				}},
 			},
