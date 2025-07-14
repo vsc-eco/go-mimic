@@ -11,6 +11,7 @@ import (
 	"github.com/go-chi/httplog/v3"
 
 	"mimic/modules/api/services"
+	"mimic/modules/api/services/broadcastops"
 	"mimic/modules/db/mimic/blockdb"
 	// ← v1 import path
 	// ← v1 JSON codec
@@ -158,13 +159,13 @@ func (s *APIServer) Start() {
 	rcService := &services.RcApi{}
 	blockApi := &services.BlockAPI{}
 	accountHistoryApi := &services.AccountHistoryApi{}
-	broadcastOps := &services.BroadcastOps{}
+	broadcastAccountOps := &broadcastops.BroadcastOpsAccount{}
 
 	s.RegisterService(condenser, "condenser_api")
+	s.RegisterService(broadcastAccountOps, "condenser_api")
 	s.RegisterService(rcService, "rc_api")
 	s.RegisterService(blockApi, "block_api")
 	s.RegisterService(accountHistoryApi, "account_history_api")
-	s.RegisterService(broadcastOps, "broadcast_ops")
 
 	port := "3000"
 	slog.Info("APIServer accepting requests.", "port", port)
