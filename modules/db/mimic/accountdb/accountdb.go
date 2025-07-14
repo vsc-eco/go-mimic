@@ -13,10 +13,13 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type AccountDBQueries interface{}
+type AccountDBQueries interface {
+	InsertAccount(context.Context, *Account) error
+	QueryAccountByNames(context.Context, *[]Account, []string) error
+}
 
 type AccountDB struct {
-	*mongo.Collection
+	collection *mongo.Collection
 }
 
 var collection AccountDBQueries = &AccountDB{nil}
@@ -30,7 +33,7 @@ func (accountdb *AccountDB) Init() error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
-	db.CreateIndex(ctx, accountdb.Collection, mongo.IndexModel{
+	db.CreateIndex(ctx, accountdb.collection, mongo.IndexModel{
 		Keys:    bson.D{{Key: "name", Value: 1}},
 		Options: options.Index().SetUnique(true).SetName("name_unique"),
 	})
@@ -46,7 +49,7 @@ func (accountdb *AccountDB) Init() error {
 		documents[i] = a
 	}
 
-	result, err := accountdb.Collection.InsertMany(ctx, documents)
+	result, err := accountdb.collection.InsertMany(ctx, documents)
 	if err != nil && !mongo.IsDuplicateKeyError(err) {
 		return err
 	}
@@ -54,7 +57,7 @@ func (accountdb *AccountDB) Init() error {
 	slog.Debug(
 		"Seeded collection.",
 		"collection",
-		accountdb.Collection.Name(),
+		accountdb.collection.Name(),
 		"documents",
 		len(result.InsertedIDs),
 	)
@@ -75,23 +78,6 @@ func (accountdb *AccountDB) Stop() error {
 }
 
 func New(d *mongo.Database) *AccountDB {
-	collection.(*AccountDB).Collection = db.NewCollection(d, "accounts")
+	collection.(*AccountDB).collection = db.NewCollection(d, "accounts")
 	return collection.(*AccountDB)
-}
-
-func (a *AccountDB) QueryAccountByNames(
-	ctx context.Context,
-	buf *[]Account,
-	names []string,
-) error {
-	filter := bson.M{"name": bson.M{"$in": names}}
-
-	cursor, err := a.Find(ctx, filter)
-	if err != nil {
-		return err
-	}
-
-	defer cursor.Close(ctx)
-
-	return cursor.All(ctx, buf)
 }
