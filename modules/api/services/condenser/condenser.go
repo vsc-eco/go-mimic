@@ -8,7 +8,6 @@ import (
 	"mimic/modules/db/mimic/accountdb"
 	"mimic/modules/db/mimic/blockdb"
 	cdb "mimic/modules/db/mimic/condenserdb"
-	"mimic/modules/db/mimic/transactiondb"
 	"mimic/modules/producers"
 	"slices"
 	"strings"
@@ -237,7 +236,7 @@ func (c *Condenser) ListProposals(args *[]any, reply *[]string) {
 
 // broadcast_transaction
 func (c *Condenser) BroadcastTransaction(
-	args *[]transactiondb.Transaction,
+	args *[]any,
 	reply *map[string]any,
 ) {
 	go c.BroadcastTransactionSynchronous(
@@ -249,7 +248,7 @@ func (c *Condenser) BroadcastTransaction(
 
 // broadcast_transaction_synchronous
 func (c *Condenser) BroadcastTransactionSynchronous(
-	args *[]transactiondb.Transaction,
+	args *[]any,
 	reply *producers.BroadcastTransactionResponse,
 ) {
 	req := producers.BroadcastTransactions(*args)

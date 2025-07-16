@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"errors"
+	"mimic/lib/utils"
 	"mimic/modules/db/mimic/blockdb"
 	"slices"
 	"time"
@@ -24,7 +25,7 @@ func (b *producerBlock) next() producerBlock {
 }
 
 func (b *producerBlock) sign(transactions []any, witness Witness) error {
-	b.Timestamp = time.Now().Format(time.RFC3339)
+	b.Timestamp = time.Now().Format(utils.TimeFormat)
 
 	// get block number
 	blockCtrBuf, err := hex.DecodeString(b.Previous[:8])

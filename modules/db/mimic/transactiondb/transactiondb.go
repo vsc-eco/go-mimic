@@ -2,14 +2,12 @@ package transactiondb
 
 import (
 	"context"
-	"log/slog"
 	"mimic/lib/utils"
 	"mimic/modules/db"
 	"time"
 
 	"github.com/chebyrash/promise"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -55,6 +53,7 @@ func Collection() *TransactionCollection {
 	return trxDb
 }
 
+/*
 // Save `trx` to database, then return the transaction number, and writes the
 // inserted id to `trx`
 func (c *TransactionCollection) NewTransaction(
@@ -78,3 +77,5 @@ func (c *TransactionCollection) NewTransaction(
 
 	return trxDb.CountDocuments(ctx, bson.M{})
 }
+
+*/

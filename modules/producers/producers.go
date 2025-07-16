@@ -5,7 +5,6 @@ import (
 	"log/slog"
 	"mimic/lib/utils"
 	"mimic/modules/db/mimic/blockdb"
-	"slices"
 	"time"
 
 	"github.com/chebyrash/promise"
@@ -117,12 +116,12 @@ func (p *Producer) makeBlock(
 	block producerBlock,
 ) (*producerBlock, error) {
 	transactions := make([]any, 0, len(requests))
-	for _, request := range requests {
-		for _, trx := range request.transaction {
-			transactions = slices.Concat(transactions, trx.Operations)
-			// TODO: validate the signature
-		}
-	}
+	// for _, request := range requests {
+	// 	for _, trx := range request.transaction {
+	// 		transactions = slices.Concat(transactions, trx.Operations)
+	// 		// TODO: validate the signature
+	// 	}
+	// }
 
 	if err := block.sign(transactions, stubWitness); err != nil {
 		return nil, err

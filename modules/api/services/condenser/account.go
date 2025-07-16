@@ -3,6 +3,7 @@ package condenser
 import (
 	"context"
 	"log/slog"
+	"mimic/lib/utils"
 	"mimic/modules/db/mimic/accountdb"
 	"time"
 
@@ -28,7 +29,7 @@ func (c *Condenser) AccountCreate(
 	arg *BroadcastParam[AccountCreateParam],
 	reply *any,
 ) {
-	timeStamp := time.Now().Format(time.RFC3339)
+	timeStamp := time.Now().Format(utils.TimeFormat)
 	a := arg.Param
 
 	account := accountdb.Account{

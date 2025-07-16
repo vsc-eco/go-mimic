@@ -7,12 +7,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"mimic/modules/api/services/condenser"
+	"mimic/lib/utils"
 	"mimic/modules/db/mimic/accountdb"
 	"mimic/modules/db/mimic/condenserdb"
-	"mimic/modules/db/mimic/transactiondb"
+	"mimic/modules/transactions"
 	"net/http"
 	"time"
+
+	"github.com/vsc-eco/hivego"
 )
 
 var httpClient = http.Client{}
@@ -30,57 +32,6 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-
-		// trx := condenser.BroadcastParam[condenser.AccountCreateParam]{
-		// 	Action: "account_create",
-		// 	Param: condenser.AccountCreateParam{
-		// 		Fee: condenser.AccountCreateFee{
-		// 			Amount:    "0",
-		// 			Precision: 3,
-		// 			Nai:       "@@000000021",
-		// 		},
-		// 		Creator:        "go-mimic-root",
-		// 		NewAccountName: account.Name,
-		// 		Owner:          account.Owner,
-		// 		Active:         account.Active,
-		// 		Posting:        account.Posting,
-		// 		MemoKey:        account.MemoKey,
-		// 		JsonMetadata:   "{}",
-		// 	},
-		// }
-
-		// req := map[string]any{
-		// 	"jsonrpc": "2.0",
-		// 	"method":  "condenser_api.account_create",
-		// 	"params":  [2]any{trx.Action, trx.Param},
-		// 	"id":      1,
-		// }
-
-		// // TODO: send these in the POST request
-		// jsonEncoded, err := json.Marshal(&req)
-		// if err != nil {
-		// 	log.Fatal(err)
-		// }
-
-		// reqBody := bytes.NewBuffer(jsonEncoded)
-
-		// cx := http.Client{}
-		// res, err := cx.Post(
-		// 	"http://localhost:3000",
-		// 	"application/json",
-		// 	reqBody,
-		// )
-		// if err != nil {
-		// 	log.Fatal(err)
-		// }
-		// defer res.Body.Close()
-
-		// var buf []byte
-		// if _, err := io.ReadFull(res.Body, buf); err != nil {
-		// 	log.Fatal(err)
-		// }
-
-		// fmt.Println(string(buf))
 	}
 }
 
@@ -95,7 +46,7 @@ func createAccount(account accountdb.Account) error {
 
 	// making a transaction, based on this implementation
 	// https://github.com/vsc-eco/hivego/blob/fa6c9e2c8be757b260a9b48b7d206fa02f8cfde9/signer.go#L22
-	trx := transactiondb.Transaction{}
+	trx := hivego.HiveTransaction{}
 
 	trx.RefBlockNum = uint16(headBlock.HeadBlockNumber & 0xffff)
 	hbidB, err := hex.DecodeString(headBlock.HeadBlockID)
@@ -104,51 +55,59 @@ func createAccount(account accountdb.Account) error {
 	}
 	trx.RefBlockPrefix = binary.LittleEndian.Uint32(hbidB[4:])
 
-	ts, err := time.Parse(time.RFC3339, headBlock.Time)
+	ts, err := time.Parse(utils.TimeFormat, headBlock.Time)
 	if err != nil {
 		return err
 	}
-	trx.Expiration = ts.Add(time.Second * 30).Format(time.RFC3339)
+	trx.Expiration = ts.Add(time.Second * 30).Format(utils.TimeFormat)
 
-	trx.Operations = make([]any, 1)
-	trx.Operations[0] = [2]any{
-		"account_create",
-		condenser.AccountCreateParam{
-			Fee: condenser.AccountCreateFee{
-				Amount:    "0",
-				Precision: 3,
-				Nai:       "@@000000021",
-			},
-			Creator:        "go-mimic-root",
-			NewAccountName: account.Name,
-			Owner:          account.Owner,
-			Active:         account.Active,
-			Posting:        account.Posting,
-			MemoKey:        account.MemoKey,
-			JsonMetadata:   "{}",
+	// trx.Operations = make([]hivego.HiveOperation, 1)
+	// trx.OperationsJs = make([][2]any, 1)
+	trx.Signatures = make([]string, 1)
+	op := transactions.AccountCreateOp{
+		Fee: transactions.AccountCreateFee{
+			Amount:    "0",
+			Precision: 3,
+			Nai:       "@@000000021",
 		},
+		Creator:        "go-mimic-root",
+		NewAccountName: account.Name,
+		Owner:          account.Owner,
+		Active:         account.Active,
+		Posting:        account.Posting,
+		MemoKey:        account.MemoKey,
+		JsonMetadata:   "{}",
 	}
+	appendTrx(&trx, &op)
 
 	// TODO: sign the transaction then make a request
+	j, err := json.MarshalIndent(trx, "", "  ")
+	fmt.Println(string(j), err)
+	// serializedTx, err := hivego.SerializeTx(trx)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
 
-	// send request
-	req := map[string]any{
-		"jsonrpc": "2.0",
-		"method":  "condenser_api.account_create",
-		"id":      1,
-		"params":  map[string]transactiondb.Transaction{"trx": trx},
-	}
+	/*
+		// send request
+		req := map[string]any{
+			"jsonrpc": "2.0",
+			"method":  "condenser_api.account_create",
+			"id":      1,
+			"params":  map[string]transactiondb.Transaction{"trx": trx},
+		}
 
-	// TODO: send these in the POST request
-	jsonEncoded, err := json.Marshal(&req)
-	if err != nil {
-		log.Fatal(err)
-	}
+		// TODO: send these in the POST request
+		jsonEncoded, err := json.Marshal(&req)
+		if err != nil {
+			log.Fatal(err)
+		}
 
-	fmt.Println(string(jsonEncoded))
+		fmt.Println(string(jsonEncoded))
 
-	// reqBody := bytes.NewBuffer(jsonEncoded)
+		// reqBody := bytes.NewBuffer(jsonEncoded)
 
+	*/
 	return nil
 }
 
@@ -179,4 +138,9 @@ func sendRequest[T any](payload any, jsonrpcMethod string) (*T, error) {
 	}
 
 	return &buf.Result, nil
+}
+
+func appendTrx(trx *hivego.HiveTransaction, op hivego.HiveOperation) {
+	trx.Operations = append(trx.Operations, op)
+	trx.OperationsJs = append(trx.OperationsJs, [2]any{op.OpName(), op})
 }
