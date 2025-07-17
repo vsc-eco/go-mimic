@@ -16,6 +16,8 @@ func RequestTrace(logger *slog.Logger) func(http.Handler) http.Handler {
 	)
 }
 
+// verifies that the header `X-ADMIN-TOKEN` is present and matches the exported admin token.
+// token verification is done with `subtle.ConstantTimeCompare` to prevent timing attacks.
 func AuthMiddleware(
 	adminToken []byte,
 	logger *slog.Logger,

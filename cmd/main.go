@@ -83,7 +83,8 @@ func main() {
 		producers.New(),
 	})
 	routers.Init()
-	routers.Start().Await(ctx)
+	routers.Start()
+	defer routers.Stop()
 
 	select {}
 }

@@ -73,6 +73,8 @@ func (a *AdminAPI) Init() error {
 	a.mux.Use(httputil.RequestTrace(requestLogger))
 	a.mux.Use(httputil.AuthMiddleware(a.adminToken[:], requestLogger))
 
+	a.mux.Post("/user/new", a.handler.newUser)
+
 	return nil
 }
 
@@ -83,7 +85,7 @@ func (a *AdminAPI) Start() *promise.Promise[any] {
 		return utils.PromiseResolve[any](nil)
 	}
 
-	a.handler.logger.Info("starting admin server.", "addr", a.httpAddr)
+	a.handler.logger.Info("starting admin API server.", "addr", a.httpAddr)
 	go func(mux *chi.Mux) {
 		err := http.ListenAndServe(a.httpAddr, mux)
 		if err != nil {
