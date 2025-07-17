@@ -3,7 +3,8 @@ package condenser
 import (
 	"encoding/json"
 	"mimic/lib/encoder"
-	"mimic/modules/db/mimic/accountdb"
+
+	"github.com/vsc-eco/hivego"
 )
 
 type BroadcastParam[T any] struct {
@@ -21,14 +22,14 @@ func (p *BroadcastParam[T]) MarshalJSON() ([]byte, error) {
 }
 
 type AccountCreateParam struct {
-	Fee            AccountCreateFee           `json:"fee"`
-	Creator        string                     `json:"creator"`
-	NewAccountName string                     `json:"new_account_name"`
-	Owner          accountdb.AccountAuthority `json:"owner"`
-	Active         accountdb.AccountAuthority `json:"active"`
-	Posting        accountdb.AccountAuthority `json:"posting"`
-	MemoKey        string                     `json:"memo_key"`
-	JsonMetadata   string                     `json:"json_metadata"`
+	Fee            AccountCreateFee `json:"fee"`
+	Creator        string           `json:"creator"`
+	NewAccountName string           `json:"new_account_name"`
+	Owner          hivego.Auths     `json:"owner"`
+	Active         hivego.Auths     `json:"active"`
+	Posting        hivego.Auths     `json:"posting"`
+	MemoKey        string           `json:"memo_key"`
+	JsonMetadata   string           `json:"json_metadata"`
 }
 
 type AccountCreateFee struct {

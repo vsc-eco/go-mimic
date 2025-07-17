@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"mimic/mock"
 	"mimic/modules/crypto"
+
+	"github.com/vsc-eco/hivego"
 )
 
 type privateKeyMapType = map[string]crypto.HiveKeySet
@@ -46,40 +48,28 @@ func GetSeedAccounts() ([]Account, error) {
 
 		accountBuf[i] = Account{
 			Name: username,
-			Active: AccountAuthority{
+			Active: hivego.Auths{
 				WeightThreshold: 1,
-				AccountAuths: []AccountAuth{{
-					Account: username,
-					Weight:  1,
-				}},
-				KeyAuths: []KeyAuth{{
-					PublicKey: *keySet.ActiveKey().GetPublicKeyString(),
-					Weight:    1,
-				}},
+				AccountAuths:    [][2]any{{username, 1}},
+				KeyAuths: [][2]any{
+					{*keySet.ActiveKey().GetPublicKeyString(), 1},
+				},
 			},
 
-			Owner: AccountAuthority{
+			Owner: hivego.Auths{
 				WeightThreshold: 1,
-				AccountAuths: []AccountAuth{{
-					Account: username,
-					Weight:  1,
-				}},
-				KeyAuths: []KeyAuth{{
-					PublicKey: *keySet.OwnerKey().GetPublicKeyString(),
-					Weight:    1,
-				}},
+				AccountAuths:    [][2]any{{username, 1}},
+				KeyAuths: [][2]any{
+					{*keySet.OwnerKey().GetPublicKeyString(), 1},
+				},
 			},
 
-			Posting: AccountAuthority{
+			Posting: hivego.Auths{
 				WeightThreshold: 1,
-				AccountAuths: []AccountAuth{{
-					Account: username,
-					Weight:  1,
-				}},
-				KeyAuths: []KeyAuth{{
-					PublicKey: *keySet.PostingKey().GetPublicKeyString(),
-					Weight:    1,
-				}},
+				AccountAuths:    [][2]any{{username, 1}},
+				KeyAuths: [][2]any{
+					{*keySet.PostingKey().GetPublicKeyString(), 1},
+				},
 			},
 
 			MemoKey: keySet.MemoKey(),

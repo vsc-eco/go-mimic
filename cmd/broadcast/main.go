@@ -5,7 +5,6 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"log"
 	"mimic/lib/utils"
 	"mimic/modules/db/mimic/accountdb"
@@ -80,13 +79,12 @@ func createAccount(account accountdb.Account) error {
 	}
 	appendTrx(&trx, &op)
 
-	// TODO: sign the transaction then make a request
-	j, err := json.MarshalIndent(trx, "", "  ")
-	fmt.Println(string(j), err)
-	// serializedTx, err := hivego.SerializeTx(trx)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
+	// TODO: sign the transaction
+	serializedTx, err := hivego.SerializeTx(trx)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Println(len(serializedTx))
 
 	/*
 		// send request

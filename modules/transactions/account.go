@@ -5,18 +5,20 @@ import (
 	"encoding/binary"
 	"fmt"
 	"mimic/lib/utils"
-	"mimic/modules/db/mimic/accountdb"
+	"sort"
+
+	"github.com/vsc-eco/hivego"
 )
 
 type AccountCreateOp struct {
-	Fee            AccountCreateFee           `json:"fee"`
-	Creator        string                     `json:"creator"`
-	NewAccountName string                     `json:"new_account_name"`
-	Owner          accountdb.AccountAuthority `json:"owner"`
-	Active         accountdb.AccountAuthority `json:"active"`
-	Posting        accountdb.AccountAuthority `json:"posting"`
-	MemoKey        string                     `json:"memo_key"`
-	JsonMetadata   string                     `json:"json_metadata"`
+	Fee            AccountCreateFee `json:"fee"`
+	Creator        string           `json:"creator"`
+	NewAccountName string           `json:"new_account_name"`
+	Owner          hivego.Auths     `json:"owner"`
+	Active         hivego.Auths     `json:"active"`
+	Posting        hivego.Auths     `json:"posting"`
+	MemoKey        string           `json:"memo_key"`
+	JsonMetadata   string           `json:"json_metadata"`
 }
 
 type AccountCreateFee struct {
@@ -30,7 +32,8 @@ func (a *AccountCreateOp) SerializeOp() ([]byte, error) {
 	buf := bytes.NewBuffer(nil)
 
 	// account create fee
-	if err := binary.Write(buf, utils.HiveBinaryEndianess, a.Fee.Amount); err != nil {
+	err := binary.Write(buf, utils.HiveBinaryEndianess, a.Fee.Amount)
+	if err != nil {
 		return nil, err
 	}
 
@@ -81,26 +84,77 @@ func (a *AccountCreateOp) OpName() string {
 	return "account_create"
 }
 
-func writeVarInt(buf *bytes.Buffer, value uint64) error {
-	var b [8]byte
-	n := binary.PutUvarint(b[:], value)
-	_, err := buf.Write(b[:n])
-	return err
+// ported from: https://github.com/vsc-eco/hivego/blob/fa6c9e2c8be757b260a9b48b7d206fa02f8cfde9/serializer.go#L325C1-L332C2
+// TODO: just make this public at hivego?
+func writeAuthority(buf *bytes.Buffer, auth *hivego.Auths) error {
+	if auth == nil {
+		return buf.WriteByte(0)
+	}
+
+	if err := buf.WriteByte(1); err != nil {
+		return err
+	}
+
+	// write weight_threshold
+	err := binary.Write(buf, binary.LittleEndian, uint32(auth.WeightThreshold))
+	if err != nil {
+		return fmt.Errorf("Error writing weight_threshold: %v", err)
+	}
+
+	// write account_auths
+	err = hivego.WriteUvarint(buf, uint64(len(auth.AccountAuths)))
+	if err != nil {
+		return fmt.Errorf("error writing account_auths length: %v", err)
+	}
+
+	for _, accountAuth := range auth.AccountAuths {
+		writeString(buf, accountAuth[0].(string))
+		err = binary.Write(
+			buf,
+			utils.HiveBinaryEndianess,
+			uint16(accountAuth[1].(uint16)),
+		)
+		if err != nil {
+			return fmt.Errorf("error writing account_auth weight: %v", err)
+		}
+	}
+
+	// write key_auths
+	err = hivego.WriteUvarint(buf, uint64(len(auth.KeyAuths)))
+	if err != nil {
+		return fmt.Errorf("error writing key_auths length: %v", err)
+	}
+
+	// sorting pub keys by value?
+	sort.SliceStable(auth.KeyAuths, func(i, j int) bool {
+		return auth.KeyAuths[i][0].(string) < auth.KeyAuths[j][0].(string)
+	})
+
+	// serialize pub keys
+	for _, keyAuth := range auth.KeyAuths {
+		pk, err := hivego.DecodePublicKey(keyAuth[0].(string))
+		if err != nil {
+			return fmt.Errorf("error decoding public key: %v", err)
+		}
+
+		if err := binary.Write(buf, utils.HiveBinaryEndianess, pk.SerializeCompressed()); err != nil {
+			return fmt.Errorf("error writing public key: %v", err)
+		}
+
+		err = binary.Write(buf, binary.LittleEndian, uint16(keyAuth[1].(int)))
+		if err != nil {
+			return fmt.Errorf("error writing key_auth weight: %v", err)
+		}
+	}
+
+	return nil
 }
 
 func writeString(buf *bytes.Buffer, value string) error {
-	err := writeVarInt(buf, uint64(len(value)))
+	err := hivego.WriteUvarint(buf, uint64(len(value)))
 	if err != nil {
 		return err
 	}
 	_, err = buf.WriteString(value)
 	return err
-}
-
-func writeAuthority(
-	_ *bytes.Buffer,
-	_ *accountdb.AccountAuthority,
-) error {
-	fmt.Println("TODO: implement writeAuthority")
-	return nil
 }
