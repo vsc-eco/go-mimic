@@ -1,4 +1,4 @@
-package services
+package condenser
 
 import (
 	"context"
@@ -48,8 +48,10 @@ func (m *mockDB) QueryHeadBlock(
 }
 
 func TestGetDynamicGlobalProperties(t *testing.T) {
-	db := &mockDB{}
-	srv := NewCondenser(db)
+	srv := &Condenser{
+		BlockDB:   &mockDB{},
+		AccountDB: nil,
+	}
 
 	args := make([]string, 0)
 	response := &condenserdb.GlobalProperties{}
@@ -58,7 +60,7 @@ func TestGetDynamicGlobalProperties(t *testing.T) {
 	srv.GetDynamicGlobalProperties(&args, response)
 
 	t.Run("it propagates the correct data.", func(t *testing.T) {
-		err := db.QueryHeadBlock(context.TODO(), &headBlock)
+		err := srv.BlockDB.QueryHeadBlock(context.TODO(), &headBlock)
 		assert.Nil(t, err)
 		assert.Equal(t, headBlock.BlockID, response.HeadBlockID)
 		assert.Equal(t, headBlock.BlockNum, response.HeadBlockNumber)

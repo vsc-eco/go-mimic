@@ -5,7 +5,6 @@ import (
 	"log/slog"
 	"mimic/lib/utils"
 	"mimic/modules/db/mimic/blockdb"
-	"slices"
 	"time"
 
 	"github.com/chebyrash/promise"
@@ -20,8 +19,6 @@ const (
 var producer *Producer = nil
 
 type Producer struct {
-	stop     context.CancelFunc
-	ctx      context.Context
 	trxQueue chan transactionRequest
 }
 
@@ -32,7 +29,6 @@ func New() *Producer {
 
 // Runs initialization in order of how they are passed in to `Aggregate`
 func (p *Producer) Init() error {
-	p.ctx, p.stop = context.WithCancel(context.Background())
 	p.trxQueue = make(chan transactionRequest, 100) // bufferred
 
 	return nil
@@ -46,7 +42,6 @@ func (p *Producer) Start() *promise.Promise[any] {
 
 // Runs cleanup once the `Aggregate` is finished
 func (p *Producer) Stop() error {
-	p.stop()
 	return nil
 }
 
@@ -68,35 +63,20 @@ func (p *Producer) produceBlocks(interval time.Duration) {
 	}
 
 	tick := time.NewTicker(interval)
-	for {
-		select {
-		case <-p.ctx.Done():
-			requests := p.batchTransactions()
+	for range tick.C {
+		requests := p.batchTransactions()
 
-			if _, err := p.makeBlock(requests, latestBlock.next()); err != nil {
-				slog.Error(
-					"Failed to create block.",
-					"block",
-					latestBlock.HiveBlock,
-				)
-			}
-			return
-
-		case <-tick.C:
-			requests := p.batchTransactions()
-
-			lastBlock, err := p.makeBlock(requests, latestBlock.next())
-			if err != nil {
-				slog.Error(
-					"Failed to create block.",
-					"block", latestBlock.HiveBlock,
-					"err", err,
-				)
-				continue
-			}
-
-			latestBlock = lastBlock
+		lastBlock, err := p.makeBlock(requests, latestBlock.next())
+		if err != nil {
+			slog.Error(
+				"Failed to create block.",
+				"block", latestBlock.HiveBlock,
+				"err", err,
+			)
+			continue
 		}
+
+		latestBlock = lastBlock
 	}
 }
 
@@ -117,12 +97,12 @@ func (p *Producer) makeBlock(
 	block producerBlock,
 ) (*producerBlock, error) {
 	transactions := make([]any, 0, len(requests))
-	for _, request := range requests {
-		for _, trx := range request.transaction {
-			transactions = slices.Concat(transactions, trx.Operations)
-			// TODO: validate the signature
-		}
-	}
+	// for _, request := range requests {
+	// 	for _, trx := range request.transaction {
+	// 		transactions = slices.Concat(transactions, trx.Operations)
+	// 		// TODO: validate the signature
+	// 	}
+	// }
 
 	if err := block.sign(transactions, stubWitness); err != nil {
 		return nil, err

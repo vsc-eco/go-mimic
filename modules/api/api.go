@@ -1,24 +1,31 @@
 package api
 
 import (
-	"encoding/json"
+	"fmt"
 	"log/slog"
+	"mimic/lib/httputil"
+	"mimic/lib/utils"
+	"mimic/modules/api/services"
+	"mimic/modules/api/services/condenser"
+	"mimic/modules/db/mimic/accountdb"
+	"mimic/modules/db/mimic/blockdb"
 	"net/http"
 	"reflect"
-	"strings"
 
+	"github.com/chebyrash/promise"
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/httplog/v3"
-
-	"mimic/modules/api/services"
-	"mimic/modules/db/mimic/blockdb"
 	// ← v1 import path
 	// ← v1 JSON codec
 )
 
 type APIServer struct {
-	r chi.Router
+	mux     *chi.Mux
+	addr    string
+	handler requestHandler
+}
 
+type requestHandler struct {
+	logger    *slog.Logger
 	rpcRoutes map[string]*ServiceMethod
 	services  map[string]reflect.Value
 }
@@ -53,127 +60,56 @@ func (s *APIServer) RegisterService(
 ) {
 	service.Expose(func(alias string, methodName string) {
 		serv := s.RegisterMethod(alias, methodName, service)
-		s.rpcRoutes[name+"."+alias] = &serv
-		s.services[name] = reflect.ValueOf(service)
+		s.handler.rpcRoutes[name+"."+alias] = &serv
+		s.handler.services[name] = reflect.ValueOf(service)
 	})
 }
 
-func (s *APIServer) Init() {
-	router := chi.NewRouter()
-
-	loggerOpts := &httplog.Options{
-		// Level defines the verbosity of the request logs:
-		// slog.LevelDebug - log all responses (incl. OPTIONS)
-		// slog.LevelInfo  - log responses (excl. OPTIONS)
-		// slog.LevelWarn  - log 4xx and 5xx responses only (except for 429)
-		// slog.LevelError - log 5xx responses only
-		Level: slog.LevelInfo,
-
-		// Set log output to Elastic Common Schema (ECS) format.
-		Schema: httplog.SchemaECS,
-
-		// RecoverPanics recovers from panics occurring in the underlying HTTP handlers
-		// and middlewares. It returns HTTP 500 unless response status was already set.
-		//
-		// NOTE: Panics are logged as errors automatically, regardless of this setting.
-		RecoverPanics: true,
-	}
-
-	router.Use(httplog.RequestLogger(slog.Default(), loggerOpts))
-
-	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write(
-			[]byte(
-				"go-mimic v1.0.0; Hive blockchain end to end simulation. To learn more, visit https://github.com/vsc-eco/go-mimic",
-			),
-		)
-	})
-
-	router.Get("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(200)
-		w.Write([]byte{})
-	})
-
-	router.Post("/", func(w http.ResponseWriter, r *http.Request) {
-		var req map[string]any
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			slog.Error("failed to decode incoming requests.", "err", err)
-			http.Error(w, "invalid request", http.StatusBadRequest)
-			return
-		}
-
-		method, valid := req["method"].(string)
-
-		if !valid {
-			http.Error(w, "invalid method", http.StatusBadRequest)
-			return
-		}
-
-		if s.rpcRoutes[method] == nil {
-			http.Error(w, "method not found", http.StatusNotFound)
-			return
-		}
-
-		methodSpec := s.rpcRoutes[method]
-
-		args := reflect.New(methodSpec.argType)
-		paramsJSON, err := json.Marshal(req["params"])
-		if err != nil {
-			http.Error(w, "invalid params", http.StatusBadRequest)
-			return
-		}
-
-		if err := json.Unmarshal(paramsJSON, args.Interface()); err != nil {
-			slog.Error("Failed to decode params",
-				"raw", paramsJSON, "err", err)
-			http.Error(w, "failed to decode params", http.StatusBadRequest)
-			return
-		}
-		reply := reflect.New(s.rpcRoutes[method].replyType)
-
-		strs := strings.Split(method, ".")
-		methodSpec.method.Func.Call([]reflect.Value{
-			s.services[strs[0]],
-			args,
-			reply,
-		})
-
-		res := map[string]any{
-			"jsonrpc": "2.0",
-			"id":      req["id"],
-			"result":  reply.Interface(),
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(res)
-	})
-
-	s.r = router
-}
-
-func (s *APIServer) Start() {
-
-	condenser := services.NewCondenser(blockdb.Collection())
+func (s *APIServer) Init() error {
+	// initialize jsonrpc methods
 	rcService := &services.RcApi{}
 	blockApi := &services.BlockAPI{}
 	accountHistoryApi := &services.AccountHistoryApi{}
-	broadcastOps := &services.BroadcastOps{}
+	condenser := &condenser.Condenser{
+		BlockDB:   blockdb.Collection(),
+		AccountDB: accountdb.Collection(),
+	}
 
 	s.RegisterService(condenser, "condenser_api")
 	s.RegisterService(rcService, "rc_api")
 	s.RegisterService(blockApi, "block_api")
 	s.RegisterService(accountHistoryApi, "account_history_api")
-	s.RegisterService(broadcastOps, "broadcast_ops")
 
-	port := "3000"
-	slog.Info("APIServer accepting requests.", "port", port)
-	http.ListenAndServe(":"+port, s.r)
+	// intialize router
+	s.mux = chi.NewRouter()
+	s.mux.Use(httputil.RequestTrace(slog.Default().WithGroup("mimic-trace")))
+	s.mux.Get("/", s.handler.root)
+	s.mux.Get("/health", s.handler.health)
+	s.mux.Post("/", s.handler.jsonrpc)
+
+	return nil
 }
 
-func NewAPIServer() *APIServer {
+func (s *APIServer) Start() *promise.Promise[any] {
+	s.handler.logger.Info("APIServer accepting requests.", "addr", s.addr)
+	go func(addr string, mux *chi.Mux) {
+		http.ListenAndServe(addr, mux)
+	}(s.addr, s.mux)
+
+	return utils.PromiseResolve[any](nil)
+}
+
+func (a *APIServer) Stop() error {
+	return nil
+}
+
+func NewAPIServer(httpPort uint16) *APIServer {
 	return &APIServer{
-		rpcRoutes: make(map[string]*ServiceMethod),
-		services:  make(map[string]reflect.Value),
+		addr: fmt.Sprintf("0.0.0.0:%d", httpPort),
+		handler: requestHandler{
+			rpcRoutes: make(map[string]*ServiceMethod),
+			services:  make(map[string]reflect.Value),
+			logger:    slog.Default().WithGroup("mimic"),
+		},
 	}
 }

@@ -1,0 +1,100 @@
+package admin
+
+import (
+	"encoding/hex"
+	"fmt"
+	"log/slog"
+	"mimic/lib/httputil"
+	"mimic/lib/utils"
+	"net/http"
+	"os"
+
+	"github.com/chebyrash/promise"
+	"github.com/go-chi/chi/v5"
+)
+
+// At run time, AdminAPI checks for the env variable `ADMIN_TOKEN`, if
+// it isn't set, the server won't run.
+//
+// All requests issued to this server must have a matching value for the
+// header `X-ADMIN-TOKEN`, otherwise an http status 401|403 is returned.
+//
+// AdminAPI implements aggregate.Plugins
+type AdminAPI struct {
+	adminToken [64]byte
+
+	// if the env token is not set, this is nil
+	mux      *chi.Mux
+	httpAddr string
+
+	handler serverHandler
+}
+
+type serverHandler struct {
+	logger *slog.Logger
+}
+
+func NewAPIServer(httpPort uint16) *AdminAPI {
+	srv := new(AdminAPI)
+
+	srv.mux = nil
+	srv.httpAddr = fmt.Sprintf("0.0.0.0:%d", httpPort)
+
+	return srv
+}
+
+// Runs initialization in order of how they are passed in to `Aggregate`
+func (a *AdminAPI) Init() error {
+	a.handler.logger = slog.Default().WithGroup("admin")
+
+	// load admin token
+	token, ok := os.LookupEnv("ADMIN_TOKEN")
+	if !ok {
+		a.handler.logger.Info("admin server disabled.")
+		a.mux = nil
+		return nil
+	}
+
+	if len(token) != len(a.adminToken)*2 {
+		return fmt.Errorf(
+			"invalid admin token format, expected hex encoding of 64 bytes.",
+		)
+	}
+
+	n, err := hex.Decode(a.adminToken[:], []byte(token))
+	if err != nil || n != len(a.adminToken) {
+		return fmt.Errorf("invalid admin token.")
+	}
+
+	// initialize mux
+	a.mux = chi.NewRouter()
+
+	requestLogger := slog.Default().WithGroup("admin-trace")
+	a.mux.Use(httputil.RequestTrace(requestLogger))
+	a.mux.Use(httputil.AuthMiddleware(a.adminToken[:], requestLogger))
+
+	return nil
+}
+
+// Runs startup and should be non blocking
+func (a *AdminAPI) Start() *promise.Promise[any] {
+	// `ADMIN_TOKEN` isn't set
+	if a.mux == nil {
+		return utils.PromiseResolve[any](nil)
+	}
+
+	a.handler.logger.Info("starting admin server.", "addr", a.httpAddr)
+	go func(mux *chi.Mux) {
+		err := http.ListenAndServe(a.httpAddr, mux)
+		if err != nil {
+			a.handler.logger.Error("failed to start server.", "err", err)
+		}
+	}(a.mux)
+
+	return utils.PromiseResolve[any](nil)
+}
+
+// Runs cleanup once the `Aggregate` is finished
+func (a *AdminAPI) Stop() error {
+	panic("not implemented") // TODO: Implement
+}

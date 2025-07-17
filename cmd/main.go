@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"mimic/lib/utils"
+	"mimic/modules/admin"
 	"mimic/modules/aggregate"
 	"mimic/modules/api"
 	"mimic/modules/db"
@@ -14,11 +15,20 @@ import (
 	"mimic/modules/producers"
 	"os"
 	"time"
+
+	"github.com/joho/godotenv"
 )
 
 var mimicDb *mimic.MimicDb
 
+const (
+	mimicServerPort uint16 = 3000
+	adminServerPort uint16 = 3001
+)
+
 func init() {
+	godotenv.Load()
+
 	// initialize logging
 	level := slog.LevelInfo
 
@@ -27,7 +37,7 @@ func init() {
 		level = slog.LevelDebug
 	case "info":
 		level = slog.LevelInfo
-	case "warn", "warning":
+	case "warn":
 		level = slog.LevelWarn
 	case "error":
 		level = slog.LevelError
@@ -57,18 +67,23 @@ func main() {
 		blockdb.New(mimicDb.Database),
 		accountdb.New(mimicDb.Database),
 		transactiondb.New(mimicDb.Database),
-		producers.New(),
 	}
 
-	agg := aggregate.New(plugins)
+	dbPlugins := aggregate.New(plugins)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
-	agg.Init()
-	agg.Start().Await(ctx)
-	defer agg.Stop()
+	dbPlugins.Init()
+	dbPlugins.Start().Await(ctx)
+	defer dbPlugins.Stop()
 
-	router := api.NewAPIServer()
-	router.Init()
-	router.Start()
+	routers := aggregate.New([]aggregate.Plugin{
+		api.NewAPIServer(mimicServerPort),
+		admin.NewAPIServer(adminServerPort),
+		producers.New(),
+	})
+	routers.Init()
+	routers.Start().Await(ctx)
+
+	select {}
 }

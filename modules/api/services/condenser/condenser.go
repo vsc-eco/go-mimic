@@ -1,13 +1,13 @@
-package services
+package condenser
 
 import (
 	"context"
 	"log/slog"
 	"mimic/mock"
+	"mimic/modules/api/services"
 	"mimic/modules/db/mimic/accountdb"
 	"mimic/modules/db/mimic/blockdb"
 	cdb "mimic/modules/db/mimic/condenserdb"
-	"mimic/modules/db/mimic/transactiondb"
 	"mimic/modules/producers"
 	"slices"
 	"strings"
@@ -15,15 +15,14 @@ import (
 )
 
 type Condenser struct {
-	db blockdb.BlockQuery
+	BlockDB   blockdb.BlockQuery
+	AccountDB accountdb.AccountQuery
 }
-
-func NewCondenser(db blockdb.BlockQuery) *Condenser { return &Condenser{db} }
 
 type GetAccountsArgs [][]string
 
 // get_accounts
-func (t *Condenser) GetAccounts(
+func (c *Condenser) GetAccounts(
 	args *GetAccountsArgs,
 	reply *[]accountdb.Account,
 ) {
@@ -42,7 +41,7 @@ func (t *Condenser) GetAccounts(
 }
 
 // get_dynamic_global_properties
-func (t *Condenser) GetDynamicGlobalProperties(
+func (c *Condenser) GetDynamicGlobalProperties(
 	_ *[]string,
 	reply *cdb.GlobalProperties,
 ) {
@@ -50,7 +49,7 @@ func (t *Condenser) GetDynamicGlobalProperties(
 	defer cancel()
 
 	headBlock := blockdb.HiveBlock{}
-	if err := t.db.QueryHeadBlock(ctx, &headBlock); err != nil {
+	if err := c.BlockDB.QueryHeadBlock(ctx, &headBlock); err != nil {
 		slog.Error("failed to query database for head block.", "err", err)
 		return
 	}
@@ -84,21 +83,20 @@ func (t *Condenser) GetDynamicGlobalProperties(
 		LastIrreversibleBlockNum:     0,
 		VotePowerReserveRate:         0,
 	}
-
 }
 
 // get_current_median_history_price
-func (t *Condenser) GetCurrentMedianHistoryPrice(
+func (c *Condenser) GetCurrentMedianHistoryPrice(
 	args *[]string,
 	reply *cdb.MedianPrice,
 ) {
-	//Fake data for now until it gets hooked up with the rest of the mock context
+	// Fake data for now until it gets hooked up with the rest of the mock context
 	reply.Base = "100.000 SBD"
 	reply.Quote = "100.000 HIVE"
 }
 
 // get_reward_fund
-func (t *Condenser) GetRewardFund(args *[]string, reply *cdb.RewardFund) {
+func (c *Condenser) GetRewardFund(args *[]string, reply *cdb.RewardFund) {
 	if len(*args) == 0 {
 		return
 	}
@@ -124,7 +122,7 @@ func (t *Condenser) GetRewardFund(args *[]string, reply *cdb.RewardFund) {
 }
 
 // get_withdraw_routes
-func (t *Condenser) GetWithdrawRoutes(
+func (c *Condenser) GetWithdrawRoutes(
 	args *[]string,
 	reply *[]cdb.WithdrawRoute,
 ) {
@@ -171,7 +169,7 @@ func (t *Condenser) GetWithdrawRoutes(
 }
 
 // get_open_orders
-func (t *Condenser) GetOpenOrders(args *[]string, reply *[]cdb.OpenOrder) {
+func (c *Condenser) GetOpenOrders(args *[]string, reply *[]cdb.OpenOrder) {
 	var (
 		orders       []cdb.OpenOrder
 		mockFilePath = "condenser_api.get_open_orders"
@@ -192,7 +190,7 @@ func (t *Condenser) GetOpenOrders(args *[]string, reply *[]cdb.OpenOrder) {
 
 // get_conversion_requests
 // aka hbd -> hive conversion
-func (t *Condenser) GetConversionRequests(
+func (c *Condenser) GetConversionRequests(
 	args *[]int,
 	reply *[]cdb.ConversionRequest,
 ) {
@@ -222,23 +220,23 @@ func (t *Condenser) GetConversionRequests(
 // aka hive -> hbd conversion
 // NOTE: docs is empty right now...
 // https://developers.hive.io/apidefinitions/#condenser_api.get_collateralized_conversion_requests
-func (t *Condenser) GetCollateralizedConversionRequests(
+func (c *Condenser) GetCollateralizedConversionRequests(
 	args *[]string,
 	reply *[]cdb.ConversionRequest,
 ) {
-	//For now send empty response until decided as necessary and implemented
+	// For now send empty response until decided as necessary and implemented
 	*reply = []cdb.ConversionRequest{}
 }
 
 // list_proposals
-func (t *Condenser) ListProposals(args *[]any, reply *[]string) {
-	//For now send empty response until decided as necessary and implemented
+func (c *Condenser) ListProposals(args *[]any, reply *[]string) {
+	// For now send empty response until decided as necessary and implemented
 	*reply = []string{}
 }
 
 // broadcast_transaction
 func (c *Condenser) BroadcastTransaction(
-	args *[]transactiondb.Transaction,
+	args *[]any,
 	reply *map[string]any,
 ) {
 	go c.BroadcastTransactionSynchronous(
@@ -250,14 +248,14 @@ func (c *Condenser) BroadcastTransaction(
 
 // broadcast_transaction_synchronous
 func (c *Condenser) BroadcastTransactionSynchronous(
-	args *[]transactiondb.Transaction,
+	args *[]any,
 	reply *producers.BroadcastTransactionResponse,
 ) {
 	req := producers.BroadcastTransactions(*args)
 	*reply = req.Response()
 }
 
-func (t *Condenser) Expose(rm RegisterMethod) {
+func (t *Condenser) Expose(rm services.RegisterMethod) {
 	rm("get_dynamic_global_properties", "GetDynamicGlobalProperties")
 	rm("get_current_median_history_price", "GetCurrentMedianHistoryPrice")
 	rm("get_reward_fund", "GetRewardFund")
@@ -268,10 +266,11 @@ func (t *Condenser) Expose(rm RegisterMethod) {
 		"get_collateralized_conversion_requests",
 		"GetCollateralizedConversionRequests",
 	)
-	rm("get_accounts", "GetAccounts")
 	rm("list_proposals", "ListProposals")
 	rm("broadcast_transaction", "BroadcastTransaction")
 	rm("broadcast_transaction_synchronous", "BroadcastTransactionSynchronous")
+	rm("get_accounts", "GetAccounts")
+	rm("account_create", "AccountCreate")
 }
 
 // Filters elements from `data` that matches the predicate `filterFunc`, then

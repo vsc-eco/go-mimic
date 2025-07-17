@@ -6,7 +6,7 @@ dev:
 	rm /tmp/go-mimic
 
 check:
-	go build -o /tmp/go-mimic ./cmd/main.go && echo "build ok."
+	go build -o /tmp/go-mimic ./cmd/main.go && echo "server build ok."
 	go test ./... -v
 
 mongosh:

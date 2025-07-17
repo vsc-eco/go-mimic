@@ -2,13 +2,14 @@ package crypto
 
 import (
 	"crypto/sha256"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"slices"
 
+	"github.com/decred/base58"
 	"github.com/decred/dcrd/dcrec/secp256k1/v2"
 	"github.com/vsc-eco/hivego"
+	"golang.org/x/crypto/ripemd160"
 )
 
 type keyRole = string
@@ -23,7 +24,8 @@ const (
 	ownerKeyRole   = keyRole("owner")
 	memoKeyRole    = keyRole("memo")
 
-	signatureCompactLen = 65
+	signatureLen     = 65
+	signatureCompact = true
 )
 
 type HiveKeySet struct {
@@ -33,7 +35,7 @@ type HiveKeySet struct {
 	memoKey    string
 }
 
-func MakeHiveKeySet(account, password string) HiveKeySet {
+func MakeHiveKeySet(account, password string) (*HiveKeySet, error) {
 	key := HiveKeySet{}
 
 	var (
@@ -41,8 +43,10 @@ func MakeHiveKeySet(account, password string) HiveKeySet {
 		passwordBytes = []byte(password)
 	)
 
+	// make owner key
 	key.ownerKey = makeHiveKey(ownerKeyRole, accountBytes, passwordBytes)
 
+	// make active key
 	key.activeKey = makeHiveKey(
 		activeKeyRole,
 		key.ownerKey.PrivateKey.Serialize(),
@@ -50,6 +54,7 @@ func MakeHiveKeySet(account, password string) HiveKeySet {
 		passwordBytes,
 	)
 
+	// make posting key
 	key.postingKey = makeHiveKey(
 		postingKeyRole,
 		key.ownerKey.PrivateKey.Serialize(),
@@ -57,15 +62,33 @@ func MakeHiveKeySet(account, password string) HiveKeySet {
 		passwordBytes,
 	)
 
-	memoKeyParts := sha256.Sum256(slices.Concat(
+	// make memo key
+	memoKeyBytes := slices.Concat(
 		[]byte(memoKeyRole),
 		accountBytes,
 		passwordBytes,
-	))
+	)
 
-	key.memoKey = hex.EncodeToString(memoKeyParts[:])
+	// implementation copied from
+	// https://github.com/vsc-eco/hivego/blob/fa6c9e2c8be757b260a9b48b7d206fa02f8cfde9/keys.go#L93C2-L114C17
+	// get ripemd160 hash
+	hasher := ripemd160.New()
+	_, err := hasher.Write(memoKeyBytes)
 
-	return key
+	if err != nil {
+		return nil, fmt.Errorf("failed to make memo key: %v", err)
+	}
+
+	// get checksum
+	checksum := hasher.Sum(nil)[:4]
+
+	// encode memo key + checksum to base58
+	encoded := base58.Encode(slices.Concat(memoKeyBytes, checksum))
+
+	// add prefix
+	key.memoKey = hivego.PublicKeyPrefix + encoded
+
+	return &key, nil
 }
 
 func (h *HiveKeySet) OwnerKey() *HiveKey   { return &h.ownerKey }
@@ -79,7 +102,7 @@ func (h *HiveKey) Sign(message []byte) ([]byte, error) {
 	}
 
 	digest := sha256.Sum256(message)
-	return secp256k1.SignCompact(h.PrivateKey, digest[:], true)
+	return secp256k1.SignCompact(h.PrivateKey, digest[:], signatureCompact)
 }
 
 func Verify(pubKeyWif string, message, signature []byte) (bool, error) {
