@@ -26,11 +26,11 @@ Not all transactions are supported on Mimic. However, we have implemented the fo
 **Hive APIs**
 
 - `account_history_api.get_ops_in_block` ✅
-- `block_api.get_block` 🚧
-- `block_api.get_block_range` 🚧
+- `block_api.get_block` ✅
+- `block_api.get_block_range` ✅
 - `condenser_api.broadcast_transaction` 🚧
 - `condenser_api.broadcast_transaction_synchronous` 🚧
-- `condenser_api.get_dynamic_global_properties` 🚧
+- `condenser_api.get_dynamic_global_properties` ✅
 - `condenser_api.get_current_median_history_price` ✅
 - `condenser_api.get_reward_fund` ✅
 - `condenser_api.get_withdraw_routes` ✅
@@ -46,8 +46,8 @@ Not all transactions are supported on Mimic. However, we have implemented the fo
 In order for the admin API server to listen on port 3001, the environment variable `ADMIN_TOKEN`
 must be exported.
 
-- Admin create account / modify keys 🚧
-    - `broadcast_ops.account_create`
+- Admin create account ✅ / modify keys 🚧
+  - `broadcast_ops.account_create`
 - Admin transaction 🚧
 - Admin reset block database
 
