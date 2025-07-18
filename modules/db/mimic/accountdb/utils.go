@@ -2,11 +2,13 @@ package accountdb
 
 import (
 	"fmt"
+	"mimic/lib/hivekey"
 	"mimic/mock"
-	"mimic/modules/crypto"
+
+	"github.com/vsc-eco/hivego"
 )
 
-type privateKeyMapType = map[string]crypto.HiveKeySet
+type privateKeyMapType = map[string]hivekey.HiveKeySet
 
 var privateKeyMap privateKeyMapType = make(privateKeyMapType)
 
@@ -16,7 +18,7 @@ type accountPrivateKeys struct {
 	ActiveKey  string `json:"active_key,omitempty"`
 }
 
-func GetPrivateKey(username string) (*crypto.HiveKeySet, error) {
+func GetPrivateKey(username string) (*hivekey.HiveKeySet, error) {
 	k, ok := privateKeyMap[username]
 	if !ok {
 		return nil, fmt.Errorf("Private key not loaded for %s.", username)
@@ -37,48 +39,34 @@ func GetSeedAccounts() ([]Account, error) {
 	for i, account := range accounts {
 		username, password := account.Username, account.Password
 
-		keySet := crypto.MakeHiveKeySet(username, password)
+		keySet := hivekey.MakeHiveKeySet(username, password)
 		privateKeyMap[username] = keySet
 
 		accountBuf[i] = Account{
 			Name: username,
-			Active: AccountAuthority{
+			Active: hivego.Auths{
 				WeightThreshold: 1,
-				AccountAuths: []AccountAuth{{
-					Account: username,
-					Weight:  1,
-				}},
-				KeyAuths: []KeyAuth{{
-					PublicKey: keySet.ActiveKey().PublicKeyHex(),
-					Weight:    1,
-				}},
+				AccountAuths:    [][2]any{{username, 1}},
+				KeyAuths: [][2]any{
+					{*keySet.ActiveKey().GetPublicKeyString(), 1},
+				},
 			},
 
-			Owner: AccountAuthority{
+			Owner: hivego.Auths{
 				WeightThreshold: 1,
-				AccountAuths: []AccountAuth{{
-					Account: username,
-					Weight:  1,
-				}},
-				KeyAuths: []KeyAuth{{
-					PublicKey: keySet.OwnerKey().PublicKeyHex(),
-					Weight:    1,
-				}},
+				AccountAuths:    [][2]any{{username, 1}},
+				KeyAuths: [][2]any{
+					{*keySet.OwnerKey().GetPublicKeyString(), 1},
+				},
 			},
 
-			Posting: AccountAuthority{
+			Posting: hivego.Auths{
 				WeightThreshold: 1,
-				AccountAuths: []AccountAuth{{
-					Account: username,
-					Weight:  1,
-				}},
-				KeyAuths: []KeyAuth{{
-					PublicKey: keySet.PostingKey().PublicKeyHex(),
-					Weight:    1,
-				}},
+				AccountAuths:    [][2]any{{username, 1}},
+				KeyAuths: [][2]any{
+					{*keySet.PostingKey().GetPublicKeyString(), 1},
+				},
 			},
-
-			MemoKey: keySet.MemoKey(),
 		}
 	}
 

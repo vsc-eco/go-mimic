@@ -55,7 +55,7 @@ func TestMakeBlock(t *testing.T) {
 	witness := Witness{name: "go-mimic-test"}
 
 	// test for empty merkle tree generation
-	firstBlock := producerBlock{&buf[0], 0}
+	firstBlock := producerBlock{&buf[0]}
 	err = firstBlock.sign([]any{}, witness)
 	assert.Nil(t, err)
 	assert.Equal(

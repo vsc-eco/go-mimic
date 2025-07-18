@@ -26,11 +26,11 @@ Not all transactions are supported on Mimic. However, we have implemented the fo
 **Hive APIs**
 
 - `account_history_api.get_ops_in_block` ✅
-- `block_api.get_block` 🚧
-- `block_api.get_block_range` 🚧
+- `block_api.get_block` ✅
+- `block_api.get_block_range` ✅
 - `condenser_api.broadcast_transaction` 🚧
 - `condenser_api.broadcast_transaction_synchronous` 🚧
-- `condenser_api.get_dynamic_global_properties` 🚧
+- `condenser_api.get_dynamic_global_properties` ✅
 - `condenser_api.get_current_median_history_price` ✅
 - `condenser_api.get_reward_fund` ✅
 - `condenser_api.get_withdraw_routes` ✅
@@ -43,8 +43,11 @@ Not all transactions are supported on Mimic. However, we have implemented the fo
 
 **Mimic APIs**
 
-- Admin create account / modify keys 🚧
-    - `broadcast_ops.account_create`
+In order for the admin API server to listen on port 3001, the environment variable `ADMIN_TOKEN`
+must be exported.
+
+- Admin create account ✅ / modify keys 🚧
+  - `broadcast_ops.account_create`
 - Admin transaction 🚧
 - Admin reset block database
 
@@ -63,6 +66,14 @@ Not all transactions are supported on Mimic. However, we have implemented the fo
 
 ## Getting Started
 
+### Exported environment variables
+
+- `ADMIN_TOKEN`: optional, hex string of 64 random bytes, only needed to start the admin API server.
+  - if `openssl` is installed, use `openssl rand -hex 64` to generate the token.
+- `LOG_LEVEL`: optional, defaults to `info`, can be set to `debug`, `info`, `warn`, `error`.
+
+go-mimic will also try to load variables from a `.env` file as well.
+
 ### Using Makefile
 
 Run the following to start the Mongo Docker container and the mimic server:
@@ -78,7 +89,7 @@ make dev
 If you don't have the necessary binaries installed, use the provided `compose.yml` to start MongoDB (default port `27017`):
 
 ```sh
-docker compose up -
+docker compose up -d
 ```
 
 Then, start the mimic server:

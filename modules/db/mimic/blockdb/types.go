@@ -26,7 +26,7 @@ type HiveBlock struct {
 	BlockNum         uint32 `json:"-"                       bson:"block_num"`
 	BlockID          string `json:"block_id"`
 	Previous         string `json:"previous"`
-	Timestamp        string `json:"timestamp"`
+	Timestamp        string `json:"time"`
 	Witness          string `json:"witness"`
 	MerkleRoot       string `json:"transaction_merkle_root"`
 	Extensions       []any  `json:"extensions"`

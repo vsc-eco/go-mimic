@@ -1,3 +1,7 @@
+// since a valid data struct of jsonrpc is an array of different types, and Go
+// does not like that, this function deserialize the value of each element in
+// the array as struct exported field, in the order they are defined.
+
 package encoder
 
 import (
@@ -7,9 +11,6 @@ import (
 	"reflect"
 )
 
-// since a valid data struct of Hive is an array of different types, and Go
-// does not like that, this function deserialize the value of each element in
-// the array as struct exported field, in the order they are defined.
 func JsonArrayDeserialize(buf any, rawJson []byte) error {
 	bufPtr := reflect.ValueOf(buf)
 	if bufPtr.Kind() != reflect.Ptr ||
@@ -36,7 +37,7 @@ func JsonArrayDeserialize(buf any, rawJson []byte) error {
 	}
 
 	if len(rawValues) != canSetFieldCounter {
-		return errors.New("array item and struct pub field count mismatch.")
+		return errors.New("array item and struct pub field count mismatch")
 	}
 
 	// iterate + set fields
