@@ -1,6 +1,7 @@
-package crypto
+package hivekey
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"errors"
 	"fmt"
@@ -9,10 +10,12 @@ import (
 	"github.com/decred/base58"
 	"github.com/decred/dcrd/dcrec/secp256k1/v2"
 	"github.com/vsc-eco/hivego"
-	"golang.org/x/crypto/ripemd160"
 )
 
-type keyRole = string
+type (
+	keyRole = string
+	keyWif  = string
+)
 
 type HiveKey struct {
 	*hivego.KeyPair
@@ -26,67 +29,37 @@ const (
 
 	signatureLen     = 65
 	signatureCompact = true
+
+	networkID = 0x80
 )
 
 type HiveKeySet struct {
 	ownerKey   HiveKey
 	activeKey  HiveKey
 	postingKey HiveKey
-	memoKey    string
 }
 
 func MakeHiveKeySet(account, password string) (*HiveKeySet, error) {
 	key := HiveKeySet{}
 
-	var (
-		accountBytes  = []byte(account)
-		passwordBytes = []byte(password)
-	)
-
 	// make owner key
-	key.ownerKey = makeHiveKey(ownerKeyRole, accountBytes, passwordBytes)
+	key.ownerKey = makeHiveKey(nil, ownerKeyRole, account, password)
 
 	// make active key
 	key.activeKey = makeHiveKey(
-		activeKeyRole,
 		key.ownerKey.PrivateKey.Serialize(),
-		accountBytes,
-		passwordBytes,
+		activeKeyRole,
+		account,
+		password,
 	)
 
 	// make posting key
 	key.postingKey = makeHiveKey(
-		postingKeyRole,
 		key.ownerKey.PrivateKey.Serialize(),
-		accountBytes,
-		passwordBytes,
+		postingKeyRole,
+		account,
+		password,
 	)
-
-	// make memo key
-	memoKeyBytes := slices.Concat(
-		[]byte(memoKeyRole),
-		accountBytes,
-		passwordBytes,
-	)
-
-	// implementation copied from
-	// https://github.com/vsc-eco/hivego/blob/fa6c9e2c8be757b260a9b48b7d206fa02f8cfde9/keys.go#L93C2-L114C17
-	// get ripemd160 hash
-	hasher := ripemd160.New()
-	_, err := hasher.Write(memoKeyBytes)
-
-	if err != nil {
-		return nil, fmt.Errorf("failed to make memo key: %v", err)
-	}
-
-	// get checksum
-	checksum := hasher.Sum(nil)[:4]
-
-	// encode memo key + checksum to base58
-	encoded := base58.Encode(slices.Concat(memoKeyBytes, checksum))
-
-	// add prefix
-	key.memoKey = hivego.PublicKeyPrefix + encoded
 
 	return &key, nil
 }
@@ -94,11 +67,50 @@ func MakeHiveKeySet(account, password string) (*HiveKeySet, error) {
 func (h *HiveKeySet) OwnerKey() *HiveKey   { return &h.ownerKey }
 func (h *HiveKeySet) ActiveKey() *HiveKey  { return &h.activeKey }
 func (h *HiveKeySet) PostingKey() *HiveKey { return &h.postingKey }
-func (h *HiveKeySet) MemoKey() string      { return h.memoKey }
+
+func (h *HiveKey) PrivateKeyWif() keyWif {
+	privKeyRaw := h.PrivateKey.Serialize()
+
+	buf := make([]byte, len(privKeyRaw)+1)
+	buf[0] = networkID
+
+	copy(buf[1:], privKeyRaw)
+
+	checksum := checksum(buf)
+	buf = slices.Concat(buf, checksum[:4])
+
+	return "5" + base58.CheckEncode(buf, [2]byte{})
+}
+
+func NewHiveKeyFromPrivateWif(encodedKey keyWif) (*HiveKey, error) {
+	if encodedKey[0] != '5' {
+		return nil, errors.New("invalid private key WIF prefix")
+	}
+
+	buf, _, err := base58.CheckDecode(encodedKey[1:])
+	if err != nil {
+		return nil, err
+	}
+
+	if buf[0] != networkID {
+		return nil, errors.New("invalid network id")
+	}
+
+	checksumdigest := buf[len(buf)-4:] // last 4 bytes is the checksum
+	key := buf[:len(buf)-4]
+
+	computedChecksum := checksum(key)
+
+	if !bytes.Equal(checksumdigest, computedChecksum[:4]) {
+		return nil, errors.New("invalid checksum")
+	}
+
+	return &HiveKey{hivego.KeyPairFromBytes(key)}, nil
+}
 
 func (h *HiveKey) Sign(message []byte) ([]byte, error) {
 	if h.PrivateKey == nil {
-		return nil, errors.New("nil private key.")
+		return nil, errors.New("nil private key")
 	}
 
 	digest := sha256.Sum256(message)
@@ -113,7 +125,10 @@ func Verify(pubKeyWif string, message, signature []byte) (bool, error) {
 
 	digest := sha256.Sum256(message)
 
-	recoveredPubKey, compacted, err := secp256k1.RecoverCompact(signature, digest[:])
+	recoveredPubKey, compacted, err := secp256k1.RecoverCompact(
+		signature,
+		digest[:],
+	)
 	if err != nil {
 		return false, fmt.Errorf("failed to decode signature key: %v", err)
 	}
@@ -129,14 +144,21 @@ func Verify(pubKeyWif string, message, signature []byte) (bool, error) {
 // https://gitlab.syncad.com/hive/devportal/-/blob/master/tutorials/python/34_password_key_change/index.py
 // https://github.com/holgern/beem/blob/2026833a836007e45f16395a9ca3b31d02e98f87/beemgraphenebase/account.py#L33
 func makeHiveKey(
+	keyPart []byte,
 	role keyRole,
-	keyParts ...[]byte,
+	username, password string,
 ) HiveKey {
 	buf := slices.Concat(
-		keyParts...,
+		keyPart,
+		[]byte(username),
+		[]byte(role),
+		[]byte(password),
 	)
-
-	digest := sha256.Sum256(append(buf, []byte(role)...))
-
+	digest := sha256.Sum256(buf)
 	return HiveKey{hivego.KeyPairFromBytes(digest[:])}
+}
+
+func checksum(data []byte) [32]byte {
+	hash := sha256.Sum256(data)
+	return sha256.Sum256(hash[:])
 }

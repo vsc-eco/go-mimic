@@ -2,13 +2,13 @@ package accountdb
 
 import (
 	"fmt"
+	"mimic/lib/hivekey"
 	"mimic/mock"
-	"mimic/modules/crypto"
 
 	"github.com/vsc-eco/hivego"
 )
 
-type privateKeyMapType = map[string]crypto.HiveKeySet
+type privateKeyMapType = map[string]hivekey.HiveKeySet
 
 var privateKeyMap privateKeyMapType = make(privateKeyMapType)
 
@@ -18,7 +18,7 @@ type accountPrivateKeys struct {
 	ActiveKey  string `json:"active_key,omitempty"`
 }
 
-func GetPrivateKey(username string) (*crypto.HiveKeySet, error) {
+func GetPrivateKey(username string) (*hivekey.HiveKeySet, error) {
 	k, ok := privateKeyMap[username]
 	if !ok {
 		return nil, fmt.Errorf("Private key not loaded for %s.", username)
@@ -39,7 +39,7 @@ func GetSeedAccounts() ([]Account, error) {
 	for i, account := range accounts {
 		username, password := account.Username, account.Password
 
-		keySet, err := crypto.MakeHiveKeySet(username, password)
+		keySet, err := hivekey.MakeHiveKeySet(username, password)
 		if err != nil {
 			return nil, err
 		}
@@ -71,8 +71,6 @@ func GetSeedAccounts() ([]Account, error) {
 					{*keySet.PostingKey().GetPublicKeyString(), 1},
 				},
 			},
-
-			MemoKey: keySet.MemoKey(),
 		}
 	}
 

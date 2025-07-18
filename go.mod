@@ -13,7 +13,6 @@ require (
 	github.com/stretchr/testify v1.10.0
 	github.com/vsc-eco/hivego v0.0.0-20250326022052-753ab49b6067
 	go.mongodb.org/mongo-driver v1.17.3
-	golang.org/x/crypto v0.40.0
 	golang.org/x/exp v0.0.0-20250506013437-ce4c2cf36ca6
 )
 
@@ -36,6 +35,7 @@ require (
 	github.com/youmark/pkcs8 v0.0.0-20240726163527-a2c0da244d78 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
+	golang.org/x/crypto v0.40.0 // indirect
 	golang.org/x/sync v0.16.0 // indirect
 	golang.org/x/text v0.27.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect

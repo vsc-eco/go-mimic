@@ -57,13 +57,13 @@ func (a *AdminAPI) Init() error {
 
 	if len(token) != len(a.adminToken)*2 {
 		return fmt.Errorf(
-			"invalid admin token format, expected hex encoding of 64 bytes.",
+			"invalid admin token format, expected hex encoding of 64 bytes",
 		)
 	}
 
 	n, err := hex.Decode(a.adminToken[:], []byte(token))
 	if err != nil || n != len(a.adminToken) {
-		return fmt.Errorf("invalid admin token.")
+		return fmt.Errorf("invalid admin token")
 	}
 
 	// initialize mux
@@ -98,5 +98,5 @@ func (a *AdminAPI) Start() *promise.Promise[any] {
 
 // Runs cleanup once the `Aggregate` is finished
 func (a *AdminAPI) Stop() error {
-	panic("not implemented") // TODO: Implement
+	return nil
 }

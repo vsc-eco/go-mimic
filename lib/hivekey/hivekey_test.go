@@ -1,4 +1,4 @@
-package crypto
+package hivekey
 
 import (
 	"crypto/rand"
@@ -20,11 +20,11 @@ func makeMessage(msgLen int) []byte {
 }
 
 func TestHiveKey(t *testing.T) {
-	account := []byte("hive-io-account")
-	password := []byte("hive-io-password")
+	account := "hive-io-account"
+	password := "hive-io-password"
 
-	key1 := makeHiveKey(ownerKeyRole, account, password)
-	key2 := makeHiveKey(ownerKeyRole, account, password)
+	key1 := makeHiveKey(nil, ownerKeyRole, account, password)
+	key2 := makeHiveKey(nil, ownerKeyRole, account, password)
 
 	t.Run("generates key pairs deterministically.", func(t *testing.T) {
 		assert.True(
@@ -46,26 +46,41 @@ func TestHiveKey(t *testing.T) {
 		privKey := sha256.Sum256(
 			slices.Concat(
 				[]byte(account),
-				[]byte(password),
 				[]byte(ownerKeyRole),
+				[]byte(password),
 			),
 		)
 		assert.Equal(t, privKey[:], keyBytes)
 	})
 
-	t.Run("signs/verifies valid signatures for messages of random length.", func(t *testing.T) {
-		for range 0xff {
-			msg := makeMessage(mrand.Intn(0xffff))
-			sig, err := key1.Sign(msg)
-			assert.Nil(t, err)
-			assert.Equal(t, signatureLen, len(sig))
+	t.Run("parses the WIF private key.", func(t *testing.T) {
+		wif := key1.PrivateKeyWif()
 
-			pubKeyWif := key1.GetPublicKeyString()
-			sigOk, err := Verify(*pubKeyWif, msg, sig)
-			assert.Nil(t, err)
-			assert.True(t, sigOk)
-		}
+		derived, err := NewHiveKeyFromPrivateWif(wif)
+		assert.Nil(t, err)
+		assert.Equal(
+			t,
+			key1.PrivateKey.Serialize(),
+			derived.PrivateKey.Serialize(),
+		)
 	})
+
+	t.Run(
+		"signs/verifies valid signatures for messages of random length.",
+		func(t *testing.T) {
+			for range 0xff {
+				msg := makeMessage(mrand.Intn(0xffff))
+				sig, err := key1.Sign(msg)
+				assert.Nil(t, err)
+				assert.Equal(t, signatureLen, len(sig))
+
+				pubKeyWif := key1.GetPublicKeyString()
+				sigOk, err := Verify(*pubKeyWif, msg, sig)
+				assert.Nil(t, err)
+				assert.True(t, sigOk)
+			}
+		},
+	)
 
 	t.Run("rejects on invalid signature", func(t *testing.T) {
 		msg := makeMessage(1024)
@@ -115,3 +130,27 @@ func TestHiveKey(t *testing.T) {
 		},
 	)
 }
+
+// func TestKeyGeneration(t *testing.T) {
+// 	godotenv.Load()
+
+// 	var (
+// 		username = utils.EnvOrPanic("TEST_USERNAME")
+// 		password = utils.EnvOrPanic("TEST_PASSWORD")
+
+// 		expectedOwnerPrivateKey = utils.EnvOrPanic("TEST_OWNER_PRIVATE_KEY")
+// 		// expectedOwnerPublicKey  = utils.EnvOrPanic("TEST_OWNER_PUBLIC_KEY")
+
+// 		// expectedActivePrivateKey = utils.EnvOrPanic("TEST_ACTIVE_PRIVATE_KEY")
+// 		// expectedActivePublicKey  = utils.EnvOrPanic("TEST_ACTIVE_PUBLIC_KEY")
+
+// 		// expectedPostingPrivateKey = utils.EnvOrPanic("TEST_POSTING_PRIVATE_KEY")
+// 		// expectedPostingPublicKey  = utils.EnvOrPanic("TEST_POSTING_PUBLIC_KEY")
+// 	)
+
+// 	keyset, err := MakeHiveKeySet(username, password)
+// 	assert.Nil(t, err)
+
+// 	ownerKeyPair := keyset.OwnerKey()
+// 	assert.Equal(t, expectedOwnerPrivateKey, ownerKeyPair.PrivateKeyWif())
+// }
