@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"mimic/lib/httputil"
 	"mimic/lib/utils"
+	"mimic/modules/db/mimic/accountdb"
 	"net/http"
 	"os"
 
@@ -32,6 +33,7 @@ type AdminAPI struct {
 
 type serverHandler struct {
 	logger *slog.Logger
+	db     accountdb.AccountQuery
 }
 
 func NewAPIServer(httpPort uint16) *AdminAPI {
@@ -65,6 +67,9 @@ func (a *AdminAPI) Init() error {
 	if err != nil || n != len(a.adminToken) {
 		return fmt.Errorf("invalid admin token")
 	}
+
+	// db
+	a.handler.db = accountdb.Collection()
 
 	// initialize mux
 	a.mux = chi.NewRouter()

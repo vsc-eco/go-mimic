@@ -24,6 +24,15 @@ type Account struct {
 	SavingsHbdBalance   string       `json:"savings_hbd_balance"`
 	VestingShares       string       `json:"vesting_shares"`
 	Reputation          int          `json:"reputation"`
+
+	// INTERNAL USAGE ONLY
+	PrivateKeys PrivateKeys `json:"-" bson:"private_keys"`
+}
+
+type PrivateKeys struct {
+	OwnerKey   string `bson:"owner_key"   json:"-"`
+	ActiveKey  string `bson:"active_key"  json:"-"`
+	PostingKey string `bson:"posting_key" json:"-"`
 }
 
 type VotingManabar struct {

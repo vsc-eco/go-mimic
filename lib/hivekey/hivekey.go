@@ -39,7 +39,7 @@ type HiveKeySet struct {
 	postingKey HiveKey
 }
 
-func MakeHiveKeySet(account, password string) (*HiveKeySet, error) {
+func MakeHiveKeySet(account, password string) HiveKeySet {
 	key := HiveKeySet{}
 
 	// make owner key
@@ -61,7 +61,7 @@ func MakeHiveKeySet(account, password string) (*HiveKeySet, error) {
 		password,
 	)
 
-	return &key, nil
+	return key
 }
 
 func (h *HiveKeySet) OwnerKey() *HiveKey   { return &h.ownerKey }
