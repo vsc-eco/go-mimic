@@ -20,7 +20,7 @@ func TestAccountAuthJSONMarshalling(t *testing.T) {
 	err := json.Unmarshal(raw, &stub)
 	assert.Nil(t, err)
 	assert.Equal(t, "hive-io", stub.AccountAuths[0][0])
-	assert.Equal(t, 1000, stub.AccountAuths[0][1])
+	assert.Equal(t, float64(1000), stub.AccountAuths[0][1])
 	assert.Equal(t, "hive-io-pubkey", stub.KeyAuths[0][0])
-	assert.Equal(t, 1000, stub.KeyAuths[0][1])
+	assert.Equal(t, float64(1000), stub.KeyAuths[0][1])
 }

@@ -1,20 +1,18 @@
 package hivekey
 
 import (
-	"bytes"
 	"crypto/sha256"
 	"errors"
 	"fmt"
 	"slices"
 
-	"github.com/decred/base58"
+	"github.com/btcsuite/btcd/btcutil/base58"
 	"github.com/decred/dcrd/dcrec/secp256k1/v2"
 	"github.com/vsc-eco/hivego"
 )
 
 type (
 	keyRole = string
-	keyWif  = string
 )
 
 type HiveKey struct {
@@ -30,8 +28,10 @@ const (
 	signatureLen     = 65
 	signatureCompact = true
 
-	networkID = 0x80
+	hiveNetworkID = 0x80
 )
+
+const version = byte(0x00)
 
 type HiveKeySet struct {
 	ownerKey   HiveKey
@@ -68,41 +68,30 @@ func (h *HiveKeySet) OwnerKey() *HiveKey   { return &h.ownerKey }
 func (h *HiveKeySet) ActiveKey() *HiveKey  { return &h.activeKey }
 func (h *HiveKeySet) PostingKey() *HiveKey { return &h.postingKey }
 
-func (h *HiveKey) PrivateKeyWif() keyWif {
+func (h *HiveKey) PrivateKeyWif() string {
 	privKeyRaw := h.PrivateKey.Serialize()
 
 	buf := make([]byte, len(privKeyRaw)+1)
-	buf[0] = networkID
+	buf[0] = hiveNetworkID
 
 	copy(buf[1:], privKeyRaw)
-
-	checksum := checksum(buf)
-	buf = slices.Concat(buf, checksum[:4])
-
-	return "5" + base58.CheckEncode(buf, [2]byte{})
+	return "5" + base58.CheckEncode(buf, version)
 }
 
-func NewHiveKeyFromPrivateWif(encodedKey keyWif) (*HiveKey, error) {
-	if encodedKey[0] != '5' {
+func NewHiveKeyFromPrivateWif(encodedKey string) (*HiveKey, error) {
+	prefix, encodedKey := encodedKey[:1], encodedKey[1:]
+	if prefix != "5" {
 		return nil, errors.New("invalid private key WIF prefix")
 	}
 
-	buf, _, err := base58.CheckDecode(encodedKey[1:])
+	key, _, err := base58.CheckDecode(encodedKey)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to decode private key: %v", err)
 	}
 
-	if buf[0] != networkID {
+	networkID, key := key[0], key[1:]
+	if networkID != hiveNetworkID {
 		return nil, errors.New("invalid network id")
-	}
-
-	checksumdigest := buf[len(buf)-4:] // last 4 bytes is the checksum
-	key := buf[:len(buf)-4]
-
-	computedChecksum := checksum(key)
-
-	if !bytes.Equal(checksumdigest, computedChecksum[:4]) {
-		return nil, errors.New("invalid checksum")
 	}
 
 	return &HiveKey{hivego.KeyPairFromBytes(key)}, nil

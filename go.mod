@@ -4,8 +4,8 @@ go 1.24.2
 
 require (
 	github.com/JustinKnueppel/go-result v1.0.0
+	github.com/btcsuite/btcd/btcutil v1.1.6
 	github.com/chebyrash/promise v0.0.0-20230709133807-42ec49ba1459
-	github.com/decred/base58 v1.0.4
 	github.com/decred/dcrd/dcrec/secp256k1/v2 v2.0.0
 	github.com/go-chi/chi/v5 v5.2.2
 	github.com/go-chi/httplog/v3 v3.2.2
@@ -20,6 +20,7 @@ require (
 	github.com/andybalholm/brotli v1.0.4 // indirect
 	github.com/cfoxon/jsonrpc2client v0.0.0-20220410030230-4f361e74821a // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/decred/base58 v1.0.4 // indirect
 	github.com/decred/dcrd/crypto/blake256 v1.0.0 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/klauspost/compress v1.16.7 // indirect
