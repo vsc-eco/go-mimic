@@ -1,8 +1,14 @@
 package accountdb
 
 import (
+	"errors"
+
 	"github.com/vsc-eco/hivego"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+)
+
+var (
+	ErrDocumentNotFound = errors.New("document not found")
 )
 
 type Account struct {

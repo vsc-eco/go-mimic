@@ -3,6 +3,7 @@ package accountdb
 import (
 	"context"
 	"log/slog"
+	"mimic/lib/hivekey"
 	"mimic/lib/utils"
 	"mimic/modules/db"
 	"time"
@@ -15,6 +16,7 @@ import (
 
 type AccountQuery interface {
 	InsertAccount(context.Context, *Account) error
+	UpdateAccountKeySet(context.Context, string, *hivekey.HiveKeySet) error
 	QueryAccountByNames(context.Context, *[]Account, []string) error
 }
 

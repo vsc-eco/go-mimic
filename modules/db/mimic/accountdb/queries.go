@@ -3,6 +3,7 @@ package accountdb
 import (
 	"context"
 	"log/slog"
+	"mimic/lib/hivekey"
 
 	"go.mongodb.org/mongo-driver/bson"
 )
@@ -33,4 +34,12 @@ func (a *AccountDB) QueryAccountByNames(
 	defer cursor.Close(ctx)
 
 	return cursor.All(ctx, buf)
+}
+
+func (a *AccountDB) UpdateAccountKeySet(
+	ctx context.Context,
+	accountName string,
+	newKeySet *hivekey.HiveKeySet,
+) error {
+	return nil
 }
