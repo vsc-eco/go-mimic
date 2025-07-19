@@ -69,6 +69,11 @@ func (h *serverHandler) updateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if len(credentials.Account) == 0 || len(credentials.Password) == 0 {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
 	newKeySet := hivekey.MakeHiveKeySet(
 		credentials.Account,
 		credentials.Password,

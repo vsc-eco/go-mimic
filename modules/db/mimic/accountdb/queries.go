@@ -41,5 +41,6 @@ func (a *AccountDB) UpdateAccountKeySet(
 	accountName string,
 	newKeySet *hivekey.HiveKeySet,
 ) error {
+	filter := bson.M{"name": accountName}
 	return nil
 }

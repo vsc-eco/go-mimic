@@ -116,19 +116,19 @@ func TestHandlerUserUpdateKey(t *testing.T) {
 	}
 
 	testTable := map[string][]TestCase{
-		"no database error": []TestCase{
+		"no database error": {
 			{nil, "foo", "bar", http.StatusNoContent},
 			{nil, "", "", http.StatusBadRequest},
 			{nil, "foo", "", http.StatusBadRequest},
 			{nil, "", "bar", http.StatusBadRequest},
 		},
-		"database internal error": []TestCase{
+		"database internal error": {
 			{errServerError, "foo", "bar", http.StatusInternalServerError},
 			{errServerError, "", "", http.StatusBadRequest},
 			{errServerError, "foo", "", http.StatusBadRequest},
 			{errServerError, "", "bar", http.StatusBadRequest},
 		},
-		"database not found error": []TestCase{
+		"database ErrDocumentNotFound": {
 			{accountdb.ErrDocumentNotFound, "foo", "bar", http.StatusNotFound},
 			{accountdb.ErrDocumentNotFound, "", "", http.StatusBadRequest},
 			{accountdb.ErrDocumentNotFound, "foo", "", http.StatusBadRequest},

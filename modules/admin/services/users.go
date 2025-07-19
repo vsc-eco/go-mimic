@@ -64,3 +64,13 @@ func MakeAccount(username, password string) (*accountdb.Account, error) {
 
 	return account, nil
 }
+
+type UserKeySet struct {
+	Owner, Active, Posting hivego.Auths
+	PrivateKeySet          accountdb.PrivateKeys
+}
+
+func makeNewUserKey(account, password string) (*UserKeySet, error) {
+	newKeySet := hivekey.MakeHiveKeySet(account, password)
+	return nil, nil
+}
