@@ -146,8 +146,3 @@ func makeHiveKey(
 	digest := sha256.Sum256(buf)
 	return HiveKey{hivego.KeyPairFromBytes(digest[:])}
 }
-
-func checksum(data []byte) [32]byte {
-	hash := sha256.Sum256(data)
-	return sha256.Sum256(hash[:])
-}

@@ -15,6 +15,7 @@ import (
 
 type AccountQuery interface {
 	InsertAccount(context.Context, *Account) error
+	UpdateAccountKeySet(context.Context, string, *UserKeySet) error
 	QueryAccountByNames(context.Context, *[]Account, []string) error
 }
 
