@@ -78,8 +78,8 @@ func (a *AdminAPI) Init() error {
 	a.mux.Use(httputil.RequestTrace(requestLogger))
 	a.mux.Use(httputil.AuthMiddleware(a.adminToken[:], requestLogger))
 
-	a.mux.Post("/user/new", a.handler.newUser)
-	a.mux.Put("/user/update", a.handler.updateUser)
+	a.mux.Post("/user", a.handler.newUser)
+	a.mux.Put("/user", a.handler.updateUser)
 
 	return nil
 }

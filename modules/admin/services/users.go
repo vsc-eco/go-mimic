@@ -16,61 +16,56 @@ func MakeAccount(username, password string) (*accountdb.Account, error) {
 		return nil, errors.New("invalid account or password")
 	}
 
-	keySet := hivekey.MakeHiveKeySet(username, password)
+	keySet := MakeNewUserKey(username, password)
 
 	account := &accountdb.Account{
 		ObjectId: primitive.NilObjectID,
-		Id:       0,
 		Name:     username,
+		KeySet: accountdb.UserKeySet{
+			Owner:         keySet.Owner,
+			Active:        keySet.Active,
+			Posting:       keySet.Posting,
+			PrivateKeySet: keySet.PrivateKeySet,
+		},
+		LastOwnerUpdate:   time.Now().Format(utils.TimeFormat),
+		LastAccountUpdate: time.Now().Format(utils.TimeFormat),
+		Created:           time.Now().Format(utils.TimeFormat),
+	}
+
+	return account, nil
+}
+
+func MakeNewUserKey(account, password string) accountdb.UserKeySet {
+	keySet := hivekey.MakeHiveKeySet(account, password)
+
+	userKeySet := accountdb.UserKeySet{
 		Owner: hivego.Auths{
-			WeightThreshold: 10000,
+			WeightThreshold: 0,
 			AccountAuths:    [][2]any{},
 			KeyAuths: [][2]any{
 				{keySet.OwnerKey().GetPublicKeyString(), 1},
 			},
 		},
 		Active: hivego.Auths{
-			WeightThreshold: 10000,
+			WeightThreshold: 0,
 			AccountAuths:    [][2]any{},
 			KeyAuths: [][2]any{
 				{keySet.ActiveKey().GetPublicKeyString(), 1},
 			},
 		},
 		Posting: hivego.Auths{
-			WeightThreshold: 10000,
+			WeightThreshold: 0,
 			AccountAuths:    [][2]any{},
 			KeyAuths: [][2]any{
 				{keySet.PostingKey().GetPublicKeyString(), 1},
 			},
 		},
-		MemoKey:             "",
-		JsonMeta:            "",
-		JsonPostingMetadata: "",
-		LastOwnerUpdate:     time.Now().Format(utils.TimeFormat),
-		LastAccountUpdate:   time.Now().Format(utils.TimeFormat),
-		Created:             time.Now().Format(utils.TimeFormat),
-		Balance:             "",
-		HbdBalance:          "",
-		SavingsHbdBalance:   "",
-		VestingShares:       "",
-		Reputation:          0,
-
-		PrivateKeys: accountdb.PrivateKeys{
+		PrivateKeySet: accountdb.PrivateKeys{
 			OwnerKey:   keySet.OwnerKey().PrivateKeyWif(),
 			ActiveKey:  keySet.ActiveKey().PrivateKeyWif(),
 			PostingKey: keySet.PostingKey().PrivateKeyWif(),
 		},
 	}
 
-	return account, nil
-}
-
-type UserKeySet struct {
-	Owner, Active, Posting hivego.Auths
-	PrivateKeySet          accountdb.PrivateKeys
-}
-
-func makeNewUserKey(account, password string) (*UserKeySet, error) {
-	newKeySet := hivekey.MakeHiveKeySet(account, password)
-	return nil, nil
+	return userKeySet
 }

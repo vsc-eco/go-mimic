@@ -3,7 +3,8 @@ package accountdb
 import (
 	"context"
 	"log/slog"
-	"mimic/lib/hivekey"
+	"mimic/lib/utils"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 )
@@ -39,8 +40,31 @@ func (a *AccountDB) QueryAccountByNames(
 func (a *AccountDB) UpdateAccountKeySet(
 	ctx context.Context,
 	accountName string,
-	newKeySet *hivekey.HiveKeySet,
+	newKeySet *UserKeySet,
 ) error {
+	ts := time.Now().Format(utils.TimeFormat)
+
+	doc := struct {
+		NewKeySet         *UserKeySet `bson:",inline"`
+		LastOwnerUpdate   string      `bson:"last_owner_update"`
+		LastAccountUpdate string      `bson:"last_account_update"`
+	}{
+		NewKeySet:         newKeySet,
+		LastOwnerUpdate:   ts,
+		LastAccountUpdate: ts,
+	}
+
 	filter := bson.M{"name": accountName}
+	update := bson.M{"$set": doc}
+
+	result, err := a.collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return err
+	}
+
+	if result.ModifiedCount == 0 {
+		return ErrAccountNotFound
+	}
+
 	return nil
 }

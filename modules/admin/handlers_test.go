@@ -7,7 +7,6 @@ import (
 	"errors"
 	"io"
 	"log/slog"
-	"mimic/lib/hivekey"
 	"mimic/modules/db/mimic/accountdb"
 	"net/http"
 	"net/http/httptest"
@@ -35,7 +34,7 @@ type mockAccountDB struct {
 func (mockaccountdb *mockAccountDB) UpdateAccountKeySet(
 	_ context.Context,
 	_ string,
-	_ *hivekey.HiveKeySet,
+	_ *accountdb.UserKeySet,
 ) error {
 	return mockaccountdb.err
 }
@@ -129,10 +128,10 @@ func TestHandlerUserUpdateKey(t *testing.T) {
 			{errServerError, "", "bar", http.StatusBadRequest},
 		},
 		"database ErrDocumentNotFound": {
-			{accountdb.ErrDocumentNotFound, "foo", "bar", http.StatusNotFound},
-			{accountdb.ErrDocumentNotFound, "", "", http.StatusBadRequest},
-			{accountdb.ErrDocumentNotFound, "foo", "", http.StatusBadRequest},
-			{accountdb.ErrDocumentNotFound, "", "bar", http.StatusBadRequest},
+			{accountdb.ErrAccountNotFound, "foo", "bar", http.StatusNotFound},
+			{accountdb.ErrAccountNotFound, "", "", http.StatusBadRequest},
+			{accountdb.ErrAccountNotFound, "foo", "", http.StatusBadRequest},
+			{accountdb.ErrAccountNotFound, "", "bar", http.StatusBadRequest},
 		},
 	}
 

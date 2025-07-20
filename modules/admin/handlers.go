@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"mimic/lib/hivekey"
 	"mimic/modules/admin/services"
 	"mimic/modules/db/mimic/accountdb"
 	"net/http"
@@ -74,7 +73,7 @@ func (h *serverHandler) updateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newKeySet := hivekey.MakeHiveKeySet(
+	newKeySet := services.MakeNewUserKey(
 		credentials.Account,
 		credentials.Password,
 	)
@@ -84,7 +83,7 @@ func (h *serverHandler) updateUser(w http.ResponseWriter, r *http.Request) {
 
 	err := h.db.UpdateAccountKeySet(ctx, credentials.Account, &newKeySet)
 	if err != nil {
-		if errors.Is(err, accountdb.ErrDocumentNotFound) {
+		if errors.Is(err, accountdb.ErrAccountNotFound) {
 			w.WriteHeader(http.StatusNotFound)
 		} else {
 			h.logger.Error("failed to update user key.", "err", err)

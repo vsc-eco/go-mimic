@@ -44,27 +44,29 @@ func GetSeedAccounts() ([]Account, error) {
 
 		accountBuf[i] = Account{
 			Name: username,
-			Active: hivego.Auths{
-				WeightThreshold: 1,
-				AccountAuths:    [][2]any{{username, 1}},
-				KeyAuths: [][2]any{
-					{*keySet.ActiveKey().GetPublicKeyString(), 1},
+			KeySet: UserKeySet{
+				Active: hivego.Auths{
+					WeightThreshold: 1,
+					AccountAuths:    [][2]any{{username, 1}},
+					KeyAuths: [][2]any{
+						{*keySet.ActiveKey().GetPublicKeyString(), 1},
+					},
 				},
-			},
 
-			Owner: hivego.Auths{
-				WeightThreshold: 1,
-				AccountAuths:    [][2]any{{username, 1}},
-				KeyAuths: [][2]any{
-					{*keySet.OwnerKey().GetPublicKeyString(), 1},
+				Owner: hivego.Auths{
+					WeightThreshold: 1,
+					AccountAuths:    [][2]any{{username, 1}},
+					KeyAuths: [][2]any{
+						{*keySet.OwnerKey().GetPublicKeyString(), 1},
+					},
 				},
-			},
 
-			Posting: hivego.Auths{
-				WeightThreshold: 1,
-				AccountAuths:    [][2]any{{username, 1}},
-				KeyAuths: [][2]any{
-					{*keySet.PostingKey().GetPublicKeyString(), 1},
+				Posting: hivego.Auths{
+					WeightThreshold: 1,
+					AccountAuths:    [][2]any{{username, 1}},
+					KeyAuths: [][2]any{
+						{*keySet.PostingKey().GetPublicKeyString(), 1},
+					},
 				},
 			},
 		}
