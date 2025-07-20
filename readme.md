@@ -46,8 +46,7 @@ Not all transactions are supported on Mimic. However, we have implemented the fo
 In order for the admin API server to listen on port 3001, the environment variable `ADMIN_TOKEN`
 must be exported.
 
-- Admin create account ✅ / modify keys 🚧
-  - `broadcast_ops.account_create`
+- Admin create account ✅ / modify keys ✅
 - Admin transaction 🚧
 - Admin reset block database
 
