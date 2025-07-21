@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"log"
 	"log/slog"
 	"mimic/lib/utils"
 	"mimic/modules/admin"
@@ -74,7 +75,10 @@ func main() {
 	defer cancel()
 
 	dbPlugins.Init()
-	dbPlugins.Start().Await(ctx)
+	_, err := dbPlugins.Start().Await(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
 	defer dbPlugins.Stop()
 
 	routers := aggregate.New([]aggregate.Plugin{
