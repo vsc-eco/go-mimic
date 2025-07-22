@@ -17,8 +17,8 @@ type Account struct {
 
 	Name                string `json:"name"`
 	MemoKey             string `json:"memo_key"`
-	JsonMeta            string `json:"json_metadata"`
-	JsonPostingMetadata string `json:"posting_json_metadata"`
+	JsonMeta            string `json:"json_metadata"         validate:"json,omitempty"`
+	JsonPostingMetadata string `json:"posting_json_metadata" validate:"json,omitempty"`
 	LastOwnerUpdate     string `json:"last_owner_update"`
 	LastAccountUpdate   string `json:"last_account_update"`
 	Created             string `json:"created"`
