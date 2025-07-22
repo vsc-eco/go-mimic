@@ -36,9 +36,9 @@ func (c *Condenser) AccountCreate(
 		Id:   0,
 		Name: a.NewAccountName,
 		KeySet: accountdb.UserKeySet{
-			Owner:   a.Owner,
-			Active:  a.Active,
-			Posting: a.Posting,
+			Owner:   &a.Owner,
+			Active:  &a.Active,
+			Posting: &a.Posting,
 		},
 		MemoKey:             a.MemoKey,
 		JsonMeta:            a.JsonMetadata,

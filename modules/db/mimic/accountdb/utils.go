@@ -45,7 +45,7 @@ func GetSeedAccounts() ([]Account, error) {
 		accountBuf[i] = Account{
 			Name: username,
 			KeySet: UserKeySet{
-				Active: hivego.Auths{
+				Active: &hivego.Auths{
 					WeightThreshold: 1,
 					AccountAuths:    [][2]any{{username, 1}},
 					KeyAuths: [][2]any{
@@ -53,7 +53,7 @@ func GetSeedAccounts() ([]Account, error) {
 					},
 				},
 
-				Owner: hivego.Auths{
+				Owner: &hivego.Auths{
 					WeightThreshold: 1,
 					AccountAuths:    [][2]any{{username, 1}},
 					KeyAuths: [][2]any{
@@ -61,7 +61,7 @@ func GetSeedAccounts() ([]Account, error) {
 					},
 				},
 
-				Posting: hivego.Auths{
+				Posting: &hivego.Auths{
 					WeightThreshold: 1,
 					AccountAuths:    [][2]any{{username, 1}},
 					KeyAuths: [][2]any{

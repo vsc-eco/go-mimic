@@ -32,18 +32,9 @@ type Account struct {
 }
 
 type UserKeySet struct {
-	Owner   hivego.Auths `json:"owner"`
-	Active  hivego.Auths `json:"active"`
-	Posting hivego.Auths `json:"posting"`
-
-	// INTERNAL USAGE ONLY
-	PrivateKeySet PrivateKeys `json:"-" bson:"private_keys"`
-}
-
-type PrivateKeys struct {
-	OwnerKey   string `bson:"owner_key"   json:"-"`
-	ActiveKey  string `bson:"active_key"  json:"-"`
-	PostingKey string `bson:"posting_key" json:"-"`
+	Owner   *hivego.Auths `json:"owner"`
+	Active  *hivego.Auths `json:"active"`
+	Posting *hivego.Auths `json:"posting"`
 }
 
 type VotingManabar struct {
