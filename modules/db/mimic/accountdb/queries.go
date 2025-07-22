@@ -2,9 +2,8 @@ package accountdb
 
 import (
 	"context"
+	"errors"
 	"log/slog"
-	"mimic/lib/utils"
-	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 )
@@ -37,25 +36,33 @@ func (a *AccountDB) QueryAccountByNames(
 	return cursor.All(ctx, buf)
 }
 
-func (a *AccountDB) UpdateAccountKeySet(
+func (a *AccountDB) UpdateAccount(
 	ctx context.Context,
-	accountName string,
-	newKeySet *UserKeySet,
+	account *Account,
 ) error {
-	ts := time.Now().Format(utils.TimeFormat)
-
-	doc := struct {
-		NewKeySet         *UserKeySet `bson:",inline"`
-		LastOwnerUpdate   string      `bson:"last_owner_update"`
-		LastAccountUpdate string      `bson:"last_account_update"`
-	}{
-		NewKeySet:         newKeySet,
-		LastOwnerUpdate:   ts,
-		LastAccountUpdate: ts,
+	if len(account.Name) == 0 {
+		return errors.New("required field `account.Name` not set")
 	}
 
-	filter := bson.M{"name": accountName}
-	update := bson.M{"$set": doc}
+	updateDoc := bson.M{"last_account_update": account.LastAccountUpdate}
+	if account.KeySet.Owner != nil {
+		updateDoc["owner"] = account.KeySet.Owner
+	}
+	if account.KeySet.Active != nil {
+		updateDoc["active"] = account.KeySet.Active
+	}
+	if account.KeySet.Posting != nil {
+		updateDoc["posting"] = account.KeySet.Posting
+	}
+	if len(account.JsonMeta) != 0 {
+		updateDoc["json_metadata"] = account.JsonMeta
+	}
+	if len(account.JsonPostingMetadata) != 0 {
+		updateDoc["posting_json_metadata"] = account.JsonPostingMetadata
+	}
+
+	filter := bson.M{"name": account.Name}
+	update := bson.M{"$set": updateDoc}
 
 	result, err := a.collection.UpdateOne(ctx, filter, update)
 	if err != nil {

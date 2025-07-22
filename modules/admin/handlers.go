@@ -4,43 +4,60 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"mimic/modules/admin/services"
+	"mimic/lib/utils"
+	"mimic/lib/validator"
 	"mimic/modules/db/mimic/accountdb"
 	"net/http"
 	"time"
 
+	"github.com/vsc-eco/hivego"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type userCredentials struct {
-	Account  string `json:"account"`
-	Password string `json:"password"`
+type userCreateParam struct {
+	Account             string        `json:"account"               validate:"required"`
+	Owner               *hivego.Auths `json:"owner"                 validate:"required"`
+	Active              *hivego.Auths `json:"active"                validate:"required"`
+	Posting             *hivego.Auths `json:"posting"               validate:"required"`
+	JsonMetadata        string        `json:"json_metadata"         validate:"json,omitempty"`
+	PostingJsonMetadata string        `json:"posting_json_metadata" validate:"json,omitempty"`
 }
 
-// Request:
-//   - request json body: { account: string, password: string }.
+// Request: POST http://0.0.0.0:3001/user
+//   - request json body: userCreateParam
 //
 // Response:
-//   - returns 400 Bad Request if the request body is invalid
-//   - returns 409 Conflict if the account already exists
 //   - returns 201 Created if the user is created successfully.
+//   - returns 400 Bad Request otherwise
 func (h *serverHandler) newUser(w http.ResponseWriter, r *http.Request) {
-	var credentials userCredentials
+	var c userCreateParam
 
-	if err := json.NewDecoder(r.Body).Decode(&credentials); err != nil {
-		h.logger.Error("failed to decode request body.", "err", err)
-		w.WriteHeader(http.StatusBadRequest)
+	if err := json.NewDecoder(r.Body).Decode(&c); err != nil {
+		h.logger.Error("failed to decode request json.", "err", err)
+		http.Error(w, "failed to decode request", http.StatusBadRequest)
 		return
 	}
 
-	account, err := services.MakeAccount(
-		credentials.Account,
-		credentials.Password,
-	)
-	if err != nil {
-		h.logger.Error("failed to create user account.", "err", err)
-		w.WriteHeader(http.StatusBadRequest)
+	if err := validator.New().Struct(&c); err != nil {
+		http.Error(w, "invalid request body", http.StatusBadRequest)
 		return
+	}
+
+	ts := time.Now().Format(utils.TimeFormat)
+
+	account := &accountdb.Account{
+		ObjectId: primitive.NilObjectID,
+		Name:     c.Account,
+		KeySet: accountdb.UserKeySet{
+			Owner:   c.Owner,
+			Active:  c.Active,
+			Posting: c.Posting,
+		},
+		LastOwnerUpdate:   ts,
+		LastAccountUpdate: ts,
+		Created:           ts,
+		JsonMeta:          c.JsonMetadata,
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
@@ -48,7 +65,7 @@ func (h *serverHandler) newUser(w http.ResponseWriter, r *http.Request) {
 
 	if err := h.db.InsertAccount(ctx, account); err != nil {
 		if mongo.IsDuplicateKeyError(err) {
-			w.WriteHeader(http.StatusConflict)
+			http.Error(w, "user exists", http.StatusBadRequest)
 		} else {
 			h.logger.Error("failed to insert user account to database.", "err", err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -59,32 +76,56 @@ func (h *serverHandler) newUser(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
-func (h *serverHandler) updateUser(w http.ResponseWriter, r *http.Request) {
-	var credentials userCredentials
+type userUpdateParam struct {
+	Account             string        `json:"account"               validate:"required"`
+	Owner               *hivego.Auths `json:"owner"`
+	Active              *hivego.Auths `json:"active"`
+	Posting             *hivego.Auths `json:"posting"`
+	JsonMetadata        string        `json:"json_metadata"         validate:"omitempty,json"`
+	PostingJsonMetadata string        `json:"posting_json_metadata" validate:"omitempty,json"`
+}
 
-	if err := json.NewDecoder(r.Body).Decode(&credentials); err != nil {
+// Request: POST http://0.0.0.0:3001/user
+//   - request json body: userUpdateParam
+//
+// Response:
+//   - returns 204 No Content if the user is created successfully.
+//   - returns 400 Bad Request otherwise
+func (h *serverHandler) updateUser(w http.ResponseWriter, r *http.Request) {
+	var c userUpdateParam
+
+	if err := json.NewDecoder(r.Body).Decode(&c); err != nil {
 		h.logger.Error("failed to decode request body.", "err", err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	if len(credentials.Account) == 0 || len(credentials.Password) == 0 {
-		w.WriteHeader(http.StatusBadRequest)
+	if err := validator.New().Struct(&c); err != nil {
+		http.Error(w, "invalid request body", http.StatusBadRequest)
 		return
 	}
-
-	newKeySet := services.MakeNewUserKey(
-		credentials.Account,
-		credentials.Password,
-	)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
-	err := h.db.UpdateAccountKeySet(ctx, credentials.Account, &newKeySet)
+	ts := time.Now().Format(utils.TimeFormat)
+
+	updateParams := accountdb.Account{
+		Name:                c.Account,
+		JsonMeta:            c.JsonMetadata,
+		JsonPostingMetadata: c.PostingJsonMetadata,
+		LastAccountUpdate:   ts,
+		KeySet: accountdb.UserKeySet{
+			Owner:   c.Owner,
+			Active:  c.Active,
+			Posting: c.Posting,
+		},
+	}
+
+	err := h.db.UpdateAccount(ctx, &updateParams)
 	if err != nil {
 		if errors.Is(err, accountdb.ErrAccountNotFound) {
-			w.WriteHeader(http.StatusNotFound)
+			http.Error(w, "account not found.", http.StatusBadRequest)
 		} else {
 			h.logger.Error("failed to update user key.", "err", err)
 			w.WriteHeader(http.StatusInternalServerError)
