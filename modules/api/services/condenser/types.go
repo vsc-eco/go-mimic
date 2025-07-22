@@ -7,6 +7,27 @@ import (
 	"github.com/vsc-eco/hivego"
 )
 
+type jsonRpcParam[T hivego.HiveOperation] struct {
+	ParamType string
+	Op        *T
+}
+
+func (param *jsonRpcParam[T]) UnmarshalJSON(data []byte) error {
+	var buf [2]any
+	if err := json.Unmarshal(data, &buf); err != nil {
+		return err
+	}
+
+	param.ParamType = buf[0].(string)
+
+	j, err := json.Marshal(buf[1])
+	if err != nil {
+		return err
+	}
+
+	return json.Unmarshal(j, &param.Op)
+}
+
 type BroadcastParam[T any] struct {
 	Action string
 	Param  T

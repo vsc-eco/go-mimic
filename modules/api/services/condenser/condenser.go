@@ -12,11 +12,28 @@ import (
 	"slices"
 	"strings"
 	"time"
+
+	"github.com/chebyrash/promise"
 )
 
 type Condenser struct {
 	BlockDB   blockdb.BlockQuery
 	AccountDB accountdb.AccountQuery
+}
+
+// Runs initialization in order of how they are passed in to `Aggregate`
+func (c *Condenser) Init() error {
+	return nil
+}
+
+// Runs startup and should be non blocking
+func (c *Condenser) Start() *promise.Promise[any] {
+	return nil
+}
+
+// Runs cleanup once the `Aggregate` is finished
+func (c *Condenser) Stop() error {
+	return nil
 }
 
 type GetAccountsArgs [][]string
@@ -271,6 +288,7 @@ func (t *Condenser) Expose(rm services.RegisterMethod) {
 	rm("broadcast_transaction_synchronous", "BroadcastTransactionSynchronous")
 	rm("get_accounts", "GetAccounts")
 	rm("account_create", "AccountCreate")
+	rm("custom_json", "CustomJSON")
 }
 
 // Filters elements from `data` that matches the predicate `filterFunc`, then
