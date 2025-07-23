@@ -2,27 +2,20 @@ package condenser
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"mimic/lib/utils"
 	"mimic/modules/db/mimic/accountdb"
 	"time"
 
-	"github.com/chebyrash/promise"
+	"github.com/vsc-eco/hivego"
 )
 
-// Runs initialization in order of how they are passed in to `Aggregate`
-func (c *Condenser) Init() error {
-	return nil
-}
-
-// Runs startup and should be non blocking
-func (c *Condenser) Start() *promise.Promise[any] {
-	return nil
-}
-
-// Runs cleanup once the `Aggregate` is finished
-func (c *Condenser) Stop() error {
-	return nil
+func (c *Condenser) AccountUpdate(
+	arg *CondenserParam[hivego.AccountUpdateOperation],
+	reply *any,
+) {
+	fmt.Println(arg, reply)
 }
 
 func (c *Condenser) AccountCreate(

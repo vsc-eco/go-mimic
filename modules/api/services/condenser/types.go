@@ -3,29 +3,37 @@ package condenser
 import (
 	"encoding/json"
 	"mimic/lib/encoder"
+	"mimic/lib/validator"
 
 	"github.com/vsc-eco/hivego"
 )
 
-type jsonRpcParam[T hivego.HiveOperation] struct {
-	ParamType string
-	Op        *T
+type CondenserParam[T hivego.HiveOperation] struct {
+	Trx *Transaction[T] `json:"trx,omitempty" validate:"required"`
 }
 
-func (param *jsonRpcParam[T]) UnmarshalJSON(data []byte) error {
-	var buf [2]any
-	if err := json.Unmarshal(data, &buf); err != nil {
+type Transaction[T hivego.HiveOperation] struct {
+	Expiration           string   `json:"expiration"`
+	Extensions           []any    `json:"extensions"`
+	Operations           []T      `json:"operations"`
+	RefBlockNum          uint16   `json:"ref_block_num"`
+	RefBlockPrefix       uint32   `json:"ref_block_prefix"`
+	Signatures           []string `json:"signatures"`
+	RequiredAuths        []string `json:"required_auths,omitempty"`
+	RequiredPostingAuths []string `json:"required_posting_auths,omitempty"`
+}
+
+func (p *CondenserParam[T]) UnmarshalJSON(data []byte) error {
+	// the call to json.Unmarshal will invoke the function
+	// `json.Unmarshaler.UnmarshalJSON`, resulting in a infinite recursion.
+	// to avoid the recusrive call to `UnmarshalJSON`, alias the type
+	type Alias CondenserParam[T]
+	aux := (*Alias)(p)
+	if err := json.Unmarshal(data, aux); err != nil {
 		return err
 	}
 
-	param.ParamType = buf[0].(string)
-
-	j, err := json.Marshal(buf[1])
-	if err != nil {
-		return err
-	}
-
-	return json.Unmarshal(j, &param.Op)
+	return validator.New().Struct(p)
 }
 
 type BroadcastParam[T any] struct {
