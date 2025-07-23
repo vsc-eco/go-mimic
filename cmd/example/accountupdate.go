@@ -4,8 +4,8 @@ import "github.com/vsc-eco/hivego"
 
 type accountUpdate struct{}
 
-func (a *accountUpdate) params() any {
-	op := &hivego.AccountUpdateOperation{
+func (a *accountUpdate) params() hivego.HiveOperation {
+	return &hivego.AccountUpdateOperation{
 		Account:      "foo",
 		Owner:        nil,
 		Active:       nil,
@@ -13,12 +13,4 @@ func (a *accountUpdate) params() any {
 		MemoKey:      "",
 		JsonMetadata: "{}",
 	}
-
-	return []any{"account_update", op}
-}
-
-func (a *accountUpdate) OpName() string { return "account_update" }
-
-func (a *accountUpdate) SerializeOp() ([]byte, error) {
-	panic("not implemented")
 }
