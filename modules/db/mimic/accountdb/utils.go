@@ -3,7 +3,8 @@ package accountdb
 import (
 	"fmt"
 	"mimic/lib/hivekey"
-	"mimic/mock"
+	"mimic/lib/utils"
+	"time"
 
 	"github.com/vsc-eco/hivego"
 )
@@ -12,65 +13,46 @@ type privateKeyMapType = map[string]hivekey.HiveKeySet
 
 var privateKeyMap privateKeyMapType = make(privateKeyMapType)
 
-type accountPrivateKeys struct {
-	OwnerKey   string `json:"owner_key,omitempty"`
-	PostingKey string `json:"posting_key,omitempty"`
-	ActiveKey  string `json:"active_key,omitempty"`
-}
-
 func GetPrivateKey(username string) (*hivekey.HiveKeySet, error) {
 	k, ok := privateKeyMap[username]
 	if !ok {
-		return nil, fmt.Errorf("Private key not loaded for %s.", username)
+		return nil, fmt.Errorf("Private key not loaded for %s", username)
 	}
 	return &k, nil
 }
 
-// generate the keys for the seed account, the private keys are stored in
-// memory, writing to the global variable `privateKeyMap`
 func GetSeedAccounts() ([]Account, error) {
-	accounts, err := mock.LoadSeedUserCredentials()
-	if err != nil {
-		return nil, err
-	}
+	var (
+		username         = utils.EnvOrPanic("TEST_USERNAME")
+		activePubKeyWif  = utils.EnvOrPanic("TEST_ACTIVE_KEY_PUBLIC")
+		ownerPubKeyWif   = utils.EnvOrPanic("TEST_OWNER_KEY_PUBLIC")
+		postingPubKeyWif = utils.EnvOrPanic("TEST_POSTING_KEY_PUBLIC")
+	)
 
-	accountBuf := make([]Account, len(accounts))
-
-	for i, account := range accounts {
-		username, password := account.Username, account.Password
-
-		keySet := hivekey.MakeHiveKeySet(username, password)
-		privateKeyMap[username] = keySet
-
-		accountBuf[i] = Account{
-			Name: username,
-			KeySet: UserKeySet{
-				Active: &hivego.Auths{
-					WeightThreshold: 1,
-					AccountAuths:    [][2]any{{username, 1}},
-					KeyAuths: [][2]any{
-						{*keySet.ActiveKey().GetPublicKeyString(), 1},
-					},
-				},
-
-				Owner: &hivego.Auths{
-					WeightThreshold: 1,
-					AccountAuths:    [][2]any{{username, 1}},
-					KeyAuths: [][2]any{
-						{*keySet.OwnerKey().GetPublicKeyString(), 1},
-					},
-				},
-
-				Posting: &hivego.Auths{
-					WeightThreshold: 1,
-					AccountAuths:    [][2]any{{username, 1}},
-					KeyAuths: [][2]any{
-						{*keySet.PostingKey().GetPublicKeyString(), 1},
-					},
-				},
+	ts := time.Now().Format(utils.TimeFormat)
+	account := Account{
+		Name: username,
+		KeySet: UserKeySet{
+			Owner: &hivego.Auths{
+				WeightThreshold: 1,
+				AccountAuths:    [][2]any{{username, 1}},
+				KeyAuths:        [][2]any{{ownerPubKeyWif, 1}},
 			},
-		}
+			Active: &hivego.Auths{
+				WeightThreshold: 1,
+				AccountAuths:    [][2]any{{username, 1}},
+				KeyAuths:        [][2]any{{activePubKeyWif, 1}},
+			},
+			Posting: &hivego.Auths{
+				WeightThreshold: 1,
+				AccountAuths:    [][2]any{{username, 1}},
+				KeyAuths:        [][2]any{{postingPubKeyWif, 1}},
+			},
+		},
+		Created:           ts,
+		LastOwnerUpdate:   ts,
+		LastAccountUpdate: ts,
 	}
 
-	return accountBuf, nil
+	return []Account{account}, nil
 }
