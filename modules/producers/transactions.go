@@ -2,10 +2,10 @@ package producers
 
 type transactionRequest struct {
 	comm        chan BroadcastTransactionResponse
-	transaction []any // TODO: update this transaction type
+	transaction any // TODO: update this transaction type
 }
 
-func BroadcastTransactions(trx []any) transactionRequest {
+func BroadcastTransactions(trx any) transactionRequest {
 	req := transactionRequest{
 		comm:        make(chan BroadcastTransactionResponse),
 		transaction: trx,

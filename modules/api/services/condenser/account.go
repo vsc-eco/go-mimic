@@ -12,7 +12,7 @@ import (
 )
 
 func (c *Condenser) AccountUpdate(
-	arg *CondenserParam[hivego.AccountUpdateOperation],
+	arg *hivego.HiveTransaction,
 	reply *any,
 ) {
 	fmt.Println(arg, reply)

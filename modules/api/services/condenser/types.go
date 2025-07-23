@@ -2,38 +2,71 @@ package condenser
 
 import (
 	"encoding/json"
+	"fmt"
 	"mimic/lib/encoder"
 	"mimic/lib/validator"
 
 	"github.com/vsc-eco/hivego"
 )
 
-type CondenserParam[T hivego.HiveOperation] struct {
-	Trx *Transaction[T] `json:"trx,omitempty" validate:"required"`
+type CondenserParam struct {
+	Trx *hivego.HiveTransaction `json:"trx,omitempty" validate:"required"`
 }
 
-type Transaction[T hivego.HiveOperation] struct {
-	Expiration           string   `json:"expiration"`
-	Extensions           []any    `json:"extensions"`
-	Operations           []T      `json:"operations"`
-	RefBlockNum          uint16   `json:"ref_block_num"`
-	RefBlockPrefix       uint32   `json:"ref_block_prefix"`
-	Signatures           []string `json:"signatures"`
-	RequiredAuths        []string `json:"required_auths,omitempty"`
-	RequiredPostingAuths []string `json:"required_posting_auths,omitempty"`
-}
-
-func (p *CondenserParam[T]) UnmarshalJSON(data []byte) error {
+func (p *CondenserParam) UnmarshalJSON(data []byte) error {
 	// the call to json.Unmarshal will invoke the function
-	// `json.Unmarshaler.UnmarshalJSON`, resulting in a infinite recursion.
+	// `json.Unmarshaler.UnmarshalJSON()`, resulting in a infinite recursion.
 	// to avoid the recusrive call to `UnmarshalJSON`, alias the type
-	type Alias CondenserParam[T]
-	aux := (*Alias)(p)
-	if err := json.Unmarshal(data, aux); err != nil {
+	type Alias CondenserParam
+	if err := json.Unmarshal(data, (*Alias)(p)); err != nil {
 		return err
 	}
 
-	return validator.New().Struct(p)
+	if err := validator.New().Struct(p); err != nil {
+		return err
+	}
+
+	p.Trx.Operations = make([]hivego.HiveOperation, len(p.Trx.OperationsJs))
+	for i, opRaw := range p.Trx.OperationsJs {
+		trxBuf, err := parseTrxType(opRaw[0].(string))
+		if err != nil {
+			return err
+		}
+
+		if err := serializeToStruct(trxBuf, opRaw[1]); err != nil {
+			return err
+		}
+
+		p.Trx.Operations[i] = trxBuf
+	}
+
+	return nil
+}
+
+func parseTrxType(opName string) (hivego.HiveOperation, error) {
+	switch opName {
+	case "custom_json":
+		return &hivego.CustomJsonOperation{}, nil
+
+	default:
+		return nil, fmt.Errorf(
+			"transaction typed %s does not implement hivego.HiveOperation interface",
+			opName,
+		)
+	}
+}
+
+func serializeToStruct(buf hivego.HiveOperation, data any) error {
+	j, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+
+	if err := json.Unmarshal(j, buf); err != nil {
+		return err
+	}
+
+	return validator.New().Struct(buf)
 }
 
 type BroadcastParam[T any] struct {

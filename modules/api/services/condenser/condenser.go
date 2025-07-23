@@ -8,7 +8,6 @@ import (
 	"mimic/modules/db/mimic/accountdb"
 	"mimic/modules/db/mimic/blockdb"
 	cdb "mimic/modules/db/mimic/condenserdb"
-	"mimic/modules/producers"
 	"slices"
 	"strings"
 	"time"
@@ -251,27 +250,6 @@ func (c *Condenser) ListProposals(args *[]any, reply *[]string) {
 	*reply = []string{}
 }
 
-// broadcast_transaction
-func (c *Condenser) BroadcastTransaction(
-	args *[]any,
-	reply *map[string]any,
-) {
-	go c.BroadcastTransactionSynchronous(
-		args,
-		&producers.BroadcastTransactionResponse{},
-	)
-	*reply = make(map[string]any)
-}
-
-// broadcast_transaction_synchronous
-func (c *Condenser) BroadcastTransactionSynchronous(
-	args *[]any,
-	reply *producers.BroadcastTransactionResponse,
-) {
-	req := producers.BroadcastTransactions(*args)
-	*reply = req.Response()
-}
-
 func (t *Condenser) Expose(rm services.RegisterMethod) {
 	rm("get_dynamic_global_properties", "GetDynamicGlobalProperties")
 	rm("get_current_median_history_price", "GetCurrentMedianHistoryPrice")
@@ -289,7 +267,6 @@ func (t *Condenser) Expose(rm services.RegisterMethod) {
 	rm("get_accounts", "GetAccounts")
 	rm("account_create", "AccountCreate")
 	rm("account_update", "AccountUpdate")
-	rm("custom_json", "CustomJSON")
 }
 
 // Filters elements from `data` that matches the predicate `filterFunc`, then

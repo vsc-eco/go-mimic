@@ -38,7 +38,7 @@ func (s *APIServer) RegisterMethod(
 
 	method, success := servType.MethodByName(methodName)
 	if !success {
-		panic("method not found")
+		panic(fmt.Sprintf("method not found: %s", methodName))
 	}
 
 	slog.Debug("Method registered.",
