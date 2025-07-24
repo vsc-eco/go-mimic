@@ -75,3 +75,33 @@ func (a *AccountDB) UpdateAccount(
 
 	return nil
 }
+
+func (a *AccountDB) QueryAccountByPubKeyWIF(
+	ctx context.Context,
+	account *Account,
+	keyString string,
+) error {
+	filter := bson.M{
+		"$or": []bson.M{
+			{
+				"posting.key_auths": bson.M{
+					"$elemMatch": bson.M{"$eq": keyString},
+				},
+			},
+			{
+				"active.key_auths": bson.M{
+					"$elemMatch": bson.M{"$eq": keyString},
+				},
+			},
+			{
+				"owner.key_auths": bson.M{
+					"$elemMatch": bson.M{"$eq": keyString},
+				},
+			},
+		},
+	}
+
+	result := a.collection.FindOne(ctx, filter)
+
+	return result.Decode(account)
+}
