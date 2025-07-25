@@ -3,9 +3,14 @@ package accountdb
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
+	"mimic/lib/hive"
 
+	"github.com/decred/dcrd/dcrec/secp256k1/v2"
+	"github.com/vsc-eco/hivego"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func (db *AccountDB) InsertAccount(
@@ -104,4 +109,97 @@ func (a *AccountDB) QueryAccountByPubKeyWIF(
 	result := a.collection.FindOne(ctx, filter)
 
 	return result.Decode(account)
+}
+
+func (a *AccountDB) QueryPubKeysByAccount(
+	ctx context.Context,
+	keyBuf map[string]map[hive.KeyRole]*secp256k1.PublicKey,
+	account []string,
+) error {
+	opts := options.Find()
+	opts.SetProjection(bson.M{
+		"name":              1,
+		"active.key_auths":  1,
+		"owner.key_auths":   1,
+		"posting.key_auths": 1,
+	})
+
+	filter := bson.M{
+		"name": bson.M{
+			"$in": account,
+		},
+	}
+
+	cur, err := a.collection.Find(ctx, filter, opts)
+	if err != nil {
+		return err
+	}
+
+	var buf []struct {
+		Name   string `bson:"name"`
+		Active struct {
+			KeyAuths [][2]any `bson:"key_auths"`
+		} `bson:"active"`
+		Owner struct {
+			KeyAuths [][2]any `bson:"key_auths"`
+		} `bson:"owner"`
+		Posting struct {
+			KeyAuths [][2]any `bson:"key_auths"`
+		} `bson:"posting"`
+	}
+
+	if err := cur.Decode(&buf); err != nil {
+		return err
+	}
+
+	for _, account := range buf {
+		var (
+			_, hasOwner   = keyBuf[account.Name][hive.OwnerKeyRole]
+			_, hasActive  = keyBuf[account.Name][hive.ActiveKeyRole]
+			_, hasPosting = keyBuf[account.Name][hive.PostingKeyRole]
+
+			err error
+		)
+
+		if hasOwner {
+			keyBuf[account.Name][hive.OwnerKeyRole], err = hivego.DecodePublicKey(
+				account.Owner.KeyAuths[0][0].(string),
+			)
+			if err != nil {
+				return fmt.Errorf(
+					"failed to decode owner public key for account %s: %w",
+					account.Name,
+					err,
+				)
+			}
+		}
+
+		if hasActive {
+			keyBuf[account.Name][hive.ActiveKeyRole], err = hivego.DecodePublicKey(
+				account.Active.KeyAuths[0][0].(string),
+			)
+			if err != nil {
+				return fmt.Errorf(
+					"failed to decode active public key for account %s: %w",
+					account.Name,
+					err,
+				)
+			}
+		}
+
+		if hasPosting {
+			keyBuf[account.Name][hive.PostingKeyRole], err = hivego.DecodePublicKey(
+				account.Posting.KeyAuths[0][0].(string),
+			)
+			if err != nil {
+				return fmt.Errorf(
+					"failed to decode posting public key for account %s: %w",
+					account.Name,
+					err,
+				)
+			}
+		}
+	}
+
+	return nil
 }
