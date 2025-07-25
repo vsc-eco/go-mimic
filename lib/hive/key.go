@@ -1,4 +1,4 @@
-package hivekey
+package hive
 
 import (
 	"crypto/sha256"
@@ -12,18 +12,23 @@ import (
 )
 
 type (
-	keyRole = string
+	KeyRole = string
 )
+
+type SigningAuthorities struct {
+	Account string
+	KeyType KeyRole
+}
 
 type HiveKey struct {
 	*hivego.KeyPair
 }
 
 const (
-	postingKeyRole = keyRole("posting")
-	activeKeyRole  = keyRole("active")
-	ownerKeyRole   = keyRole("owner")
-	memoKeyRole    = keyRole("memo")
+	PostingKeyRole = KeyRole("posting")
+	ActiveKeyRole  = KeyRole("active")
+	OwnerKeyRole   = KeyRole("owner")
+	MemoKeyRole    = KeyRole("memo")
 
 	signatureLen     = 65
 	signatureCompact = true
@@ -43,12 +48,12 @@ func MakeHiveKeySet(account, password string) HiveKeySet {
 	key := HiveKeySet{}
 
 	// make owner key
-	key.ownerKey = makeHiveKey(nil, ownerKeyRole, account, password)
+	key.ownerKey = makeHiveKey(nil, OwnerKeyRole, account, password)
 
 	// make active key
 	key.activeKey = makeHiveKey(
 		key.ownerKey.PrivateKey.Serialize(),
-		activeKeyRole,
+		ActiveKeyRole,
 		account,
 		password,
 	)
@@ -56,7 +61,7 @@ func MakeHiveKeySet(account, password string) HiveKeySet {
 	// make posting key
 	key.postingKey = makeHiveKey(
 		key.ownerKey.PrivateKey.Serialize(),
-		postingKeyRole,
+		PostingKeyRole,
 		account,
 		password,
 	)
@@ -134,7 +139,7 @@ func Verify(pubKeyWif string, message, signature []byte) (bool, error) {
 // https://github.com/holgern/beem/blob/2026833a836007e45f16395a9ca3b31d02e98f87/beemgraphenebase/account.py#L33
 func makeHiveKey(
 	keyPart []byte,
-	role keyRole,
+	role KeyRole,
 	username, password string,
 ) HiveKey {
 	buf := slices.Concat(

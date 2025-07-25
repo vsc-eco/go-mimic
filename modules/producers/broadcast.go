@@ -1,40 +1,60 @@
 package producers
 
 import (
-	"context"
-	"encoding/hex"
 	"errors"
-	"mimic/modules/db/mimic/accountdb"
-	"time"
+	"fmt"
+	"mimic/lib/hive"
+	"mimic/lib/hive/hiveop"
 
-	"github.com/decred/dcrd/dcrec/secp256k1/v2"
 	"github.com/vsc-eco/hivego"
 )
 
+var errMissingSignature = errors.New("missing signature")
+
+type keyTypeCache = map[string]map[hive.KeyRole]any
+
 func ValidateTransaction(transaction *hivego.HiveTransaction) error {
-	sig, err := hex.DecodeString(transaction.Signatures[0])
-	if err != nil {
-		return err
+	if len(transaction.Signatures) == 0 {
+		return errMissingSignature
 	}
 
-	txDigest, err := hivego.SerializeTx(*transaction)
-	if err != nil {
-		return err
+	key := make(keyTypeCache)
+
+	for _, opRaw := range transaction.OperationsJs {
+		opName, ok := opRaw[0].(string)
+		if !ok {
+			return fmt.Errorf("invalid operation name: %v", opRaw[0])
+		}
+
+		op, err := getOp(opName)
+		if err != nil {
+			return err
+		}
+
+		for _, auth := range op.SigningAuthorities() {
+			if _, ok := key[auth.Account]; !ok {
+				key[auth.Account] = make(map[hive.KeyRole]any)
+			}
+			key[auth.Account][auth.KeyType] = struct{}{}
+		}
 	}
 
-	pubKey, _, err := secp256k1.RecoverCompact(sig, txDigest)
-	if err != nil {
-		return err
+	return nil
+}
+
+func getOp(opName string) (hiveop.Operation, error) {
+	var (
+		op  hiveop.Operation = nil
+		err error            = nil
+	)
+
+	switch opName {
+	case "custom_json":
+		op = &hiveop.CustomJson{}
+
+	default:
+		err = fmt.Errorf("unknown operation: %s", opName)
 	}
 
-	pubKeyWif := hivego.GetPublicKeyString(pubKey)
-	if pubKeyWif == nil {
-		return errors.New("bad public key")
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer cancel()
-
-	return accountdb.Collection().
-		QueryAccountByPubKeyWIF(ctx, &accountdb.Account{}, *pubKeyWif)
+	return op, err
 }

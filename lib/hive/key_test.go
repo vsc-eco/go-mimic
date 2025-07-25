@@ -1,4 +1,4 @@
-package hivekey
+package hive
 
 import (
 	"crypto/rand"
@@ -23,8 +23,8 @@ func TestHiveKey(t *testing.T) {
 	account := "hive-io-account"
 	password := "hive-io-password"
 
-	key1 := makeHiveKey(nil, ownerKeyRole, account, password)
-	key2 := makeHiveKey(nil, ownerKeyRole, account, password)
+	key1 := makeHiveKey(nil, OwnerKeyRole, account, password)
+	key2 := makeHiveKey(nil, OwnerKeyRole, account, password)
 
 	t.Run("generates key pairs deterministically.", func(t *testing.T) {
 		assert.True(
@@ -46,7 +46,7 @@ func TestHiveKey(t *testing.T) {
 		privKey := sha256.Sum256(
 			slices.Concat(
 				[]byte(account),
-				[]byte(ownerKeyRole),
+				[]byte(OwnerKeyRole),
 				[]byte(password),
 			),
 		)

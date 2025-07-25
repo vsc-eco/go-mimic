@@ -2,18 +2,18 @@ package accountdb
 
 import (
 	"fmt"
-	"mimic/lib/hivekey"
+	"mimic/lib/hive"
 	"mimic/lib/utils"
 	"time"
 
 	"github.com/vsc-eco/hivego"
 )
 
-type privateKeyMapType = map[string]hivekey.HiveKeySet
+type privateKeyMapType = map[string]hive.HiveKeySet
 
 var privateKeyMap privateKeyMapType = make(privateKeyMapType)
 
-func GetPrivateKey(username string) (*hivekey.HiveKeySet, error) {
+func GetPrivateKey(username string) (*hive.HiveKeySet, error) {
 	k, ok := privateKeyMap[username]
 	if !ok {
 		return nil, fmt.Errorf("Private key not loaded for %s", username)
