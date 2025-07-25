@@ -36,6 +36,35 @@ var transactionType = map[string]jsonrpcMethod{
 	"account_update": &accountUpdate{},
 }
 
+/**
+- [Main Consumer]
+- binary for main process
+- Separate binary for tests/consumer application
+-- hits the API
+-- post transactions
+- [Tests]
+- Creating an account with generated keys -- keys pregenerated
+- Block streaming (showing it can stream blocks from the RPC)
+- Creating various transaction with proper validation
+-- Test for known correct transactions
+-- Test for negative cases (i.e incorrect transactions); Signature validation; Format validation
+- Verify streaming can receive said transactions after 3-6s
+- [Possibly later]
+- Test get_account API
+-- account_update transaction should update get_account API response (i.e modify database records)
+- Balance updates for transfers
+
+
+
+
+[validatioen]
+- format?
+- signature
+- state transition
+-- ie user transfer, need to verify they have the sufficient balance
+
+*/
+
 func init() {
 	privKeyWIF := utils.EnvOrPanic("TEST_OWNER_PRIVATE_KEY")
 
