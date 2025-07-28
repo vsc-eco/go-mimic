@@ -10,6 +10,12 @@ import (
 
 const rootMsg = "go-mimic v1.0.0; Hive blockchain end to end simulation. To learn more, visit https://github.com/vsc-eco/go-mimic"
 
+type requestHandler struct {
+	logger    *slog.Logger
+	rpcRoutes map[string]*ServiceMethod
+	services  map[string]reflect.Value
+}
+
 func (h *requestHandler) root(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(rootMsg))
@@ -22,7 +28,7 @@ func (h *requestHandler) health(w http.ResponseWriter, _ *http.Request) {
 func (h *requestHandler) jsonrpc(w http.ResponseWriter, r *http.Request) {
 	var req map[string]any
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		slog.Error("failed to decode incoming requests.", "err", err)
+		h.logger.Error("failed to decode incoming requests.", "err", err)
 		http.Error(w, "invalid request", http.StatusBadRequest)
 		return
 	}

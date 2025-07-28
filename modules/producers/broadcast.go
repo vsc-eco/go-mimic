@@ -3,6 +3,7 @@ package producers
 import (
 	"context"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"mimic/lib/hive"
@@ -32,10 +33,10 @@ func ValidateTransaction(transaction *hivego.HiveTransaction) error {
 	for _, op := range transaction.Operations {
 		v, err := opvalidator.NewValidator(op.OpName())
 		if err != nil {
-			if errors.Is(err, opvalidator.ErrUnimplementedValidator) {
+			if errors.Is(err, opvalidator.ErrValidatorNotImplemented) {
 				panic(err)
 			} else {
-				return err
+				return fmt.Errorf("failed to get validator for operation %s: %w", op.OpName(), err)
 			}
 		}
 
@@ -54,14 +55,9 @@ func ValidateTransaction(transaction *hivego.HiveTransaction) error {
 	keyBuf := make(keyTypeCache)
 
 	for _, opRaw := range transaction.OperationsJs {
-		opName, ok := opRaw[0].(string)
-		if !ok {
-			return fmt.Errorf("invalid operation name: %v", opRaw[0])
-		}
-
-		op, err := getOp(opName)
+		op, err := getOp(opRaw)
 		if err != nil {
-			return err
+			panic(err)
 		}
 
 		for _, auth := range op.SigningAuthorities() {
@@ -144,11 +140,16 @@ func getPubKeys(keyBuf keyTypeCache) error {
 	return nil
 }
 
-func getOp(opName string) (hiveop.Operation, error) {
+func getOp(operation [2]any) (hiveop.Operation, error) {
 	var (
 		op  hiveop.Operation = nil
 		err error            = nil
 	)
+
+	opName, ok := operation[0].(string)
+	if !ok {
+		return nil, opvalidator.ErrInvalidOperation
+	}
 
 	switch opName {
 	case "custom_json":
@@ -158,5 +159,14 @@ func getOp(opName string) (hiveop.Operation, error) {
 		err = fmt.Errorf("unknown operation: %s", opName)
 	}
 
-	return op, err
+	if err != nil {
+		return nil, err
+	}
+
+	jBytes, err := json.Marshal(operation[1])
+	if err != nil {
+		return nil, err
+	}
+
+	return op, json.Unmarshal(jBytes, op)
 }

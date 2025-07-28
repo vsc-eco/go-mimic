@@ -14,7 +14,8 @@ type customJsonValidator struct {
 func (c *customJsonValidator) ValidateOperation(o hivego.HiveOperation) error {
 	op, ok := o.(*hivego.CustomJsonOperation)
 	if !ok {
-		return ErrUnimplementedValidator
+		panic("expected custom json operation")
+		return ErrValidatorNotImplemented
 	}
 
 	if len(op.RequiredAuths) == 0 && len(op.RequiredPostingAuths) == 0 {

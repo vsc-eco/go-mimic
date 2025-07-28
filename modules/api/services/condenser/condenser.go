@@ -16,6 +16,7 @@ import (
 )
 
 type Condenser struct {
+	Logger    *slog.Logger
 	BlockDB   blockdb.BlockQuery
 	AccountDB accountdb.AccountQuery
 }

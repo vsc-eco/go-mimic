@@ -3,7 +3,6 @@ package condenser
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"mimic/modules/producers"
 )
 
@@ -24,7 +23,7 @@ func (c *Condenser) BroadcastTransactionSynchronous(
 ) {
 	trx := args.Trx
 	if err := producers.ValidateTransaction(trx); err != nil {
-		log.Println(err) // TODO: log with module's slog
+		c.Logger.Error("failed to validate transaction", "err", err)
 		return
 	}
 	jj, err := json.MarshalIndent(args, "", "  ")

@@ -24,12 +24,6 @@ type APIServer struct {
 	handler requestHandler
 }
 
-type requestHandler struct {
-	logger    *slog.Logger
-	rpcRoutes map[string]*ServiceMethod
-	services  map[string]reflect.Value
-}
-
 func (s *APIServer) RegisterMethod(
 	alias, methodName string,
 	servc any,
@@ -66,11 +60,13 @@ func (s *APIServer) RegisterService(
 }
 
 func (s *APIServer) Init() error {
+	s.handler.logger = slog.Default().WithGroup("api")
 	// initialize jsonrpc methods
 	rcService := &services.RcApi{}
 	blockApi := &services.BlockAPI{}
 	accountHistoryApi := &services.AccountHistoryApi{}
 	condenser := &condenser.Condenser{
+		Logger:    s.handler.logger,
 		BlockDB:   blockdb.Collection(),
 		AccountDB: accountdb.Collection(),
 	}

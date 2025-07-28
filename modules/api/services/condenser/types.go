@@ -13,6 +13,17 @@ type CondenserParam struct {
 	Trx *hivego.HiveTransaction `json:"trx,omitempty" validate:"required"`
 }
 
+func (p *CondenserParam) MarshalJSON() ([]byte, error) {
+	fmt.Println("Marshaling CondenserParam")
+
+	p.Trx.OperationsJs = make([][2]any, len(p.Trx.Operations))
+	for i, op := range p.Trx.Operations {
+		p.Trx.OperationsJs[i] = [2]any{op.OpName(), op}
+	}
+
+	return json.Marshal(map[string]any{"trx": p.Trx})
+}
+
 func (p *CondenserParam) UnmarshalJSON(data []byte) error {
 	// the call to json.Unmarshal will invoke the function
 	// `json.Unmarshaler.UnmarshalJSON()`, resulting in a infinite recursion.

@@ -7,7 +7,10 @@ import (
 	"github.com/vsc-eco/hivego"
 )
 
-var ErrUnimplementedValidator = errors.New("invalid operation type")
+var (
+	ErrValidatorNotImplemented = errors.New("validator not implemented")
+	ErrInvalidOperation        = errors.New("invalid operation")
+)
 
 type OperationValidator interface {
 	ValidateOperation(hivego.HiveOperation) error
@@ -26,7 +29,7 @@ func init() {
 func NewValidator(opName string) (OperationValidator, error) {
 	v, ok := validatorMap[opName]
 	if !ok {
-		return nil, errors.New("validator not implemented")
+		return nil, ErrValidatorNotImplemented
 	}
 	return v, nil
 }

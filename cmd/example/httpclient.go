@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"mimic/modules/api/services/condenser"
 	"mimic/modules/db/mimic/condenserdb"
 	"net/http"
 
@@ -17,12 +18,10 @@ type apiClient struct {
 }
 
 type broadcastTransactionRequest struct {
-	JsonRPC string `json:"jsonrpc"`
-	ID      int    `json:"id"`
-	Method  string `json:"method"`
-	Params  struct {
-		Trx hivego.HiveTransaction `json:"trx"`
-	} `json:"params"`
+	JsonRPC string                    `json:"jsonrpc"`
+	ID      int                       `json:"id"`
+	Method  string                    `json:"method"`
+	Params  *condenser.CondenserParam `json:"params"`
 }
 
 func (a *apiClient) broadcastSync(
@@ -42,10 +41,8 @@ func (a *apiClient) broadcastSync(
 		JsonRPC: "2.0",
 		ID:      1,
 		Method:  "condenser_api.broadcast_transaction_synchronous",
-		Params: struct {
-			Trx hivego.HiveTransaction `json:"trx"`
-		}{
-			Trx: *trx,
+		Params: &condenser.CondenserParam{
+			Trx: trx,
 		},
 	}
 

@@ -7,9 +7,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-var (
-	ErrAccountNotFound = errors.New("account not found")
-)
+var ErrAccountNotFound = errors.New("account not found")
 
 type Account struct {
 	ObjectId primitive.ObjectID `json:"-"  bson:"_id,omitempty"`

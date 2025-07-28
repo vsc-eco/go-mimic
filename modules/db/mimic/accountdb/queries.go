@@ -135,19 +135,7 @@ func (a *AccountDB) QueryPubKeysByAccount(
 		return err
 	}
 
-	var buf []struct {
-		Name   string `bson:"name"`
-		Active struct {
-			KeyAuths [][2]any `bson:"key_auths"`
-		} `bson:"active"`
-		Owner struct {
-			KeyAuths [][2]any `bson:"key_auths"`
-		} `bson:"owner"`
-		Posting struct {
-			KeyAuths [][2]any `bson:"key_auths"`
-		} `bson:"posting"`
-	}
-
+	var buf []Account
 	if err := cur.Decode(&buf); err != nil {
 		return err
 	}
@@ -163,7 +151,7 @@ func (a *AccountDB) QueryPubKeysByAccount(
 
 		if hasOwner {
 			keyBuf[account.Name][hive.OwnerKeyRole], err = hivego.DecodePublicKey(
-				account.Owner.KeyAuths[0][0].(string),
+				account.KeySet.Owner.KeyAuths[0][0].(string),
 			)
 			if err != nil {
 				return fmt.Errorf(
@@ -176,7 +164,7 @@ func (a *AccountDB) QueryPubKeysByAccount(
 
 		if hasActive {
 			keyBuf[account.Name][hive.ActiveKeyRole], err = hivego.DecodePublicKey(
-				account.Active.KeyAuths[0][0].(string),
+				account.KeySet.Active.KeyAuths[0][0].(string),
 			)
 			if err != nil {
 				return fmt.Errorf(
@@ -189,7 +177,7 @@ func (a *AccountDB) QueryPubKeysByAccount(
 
 		if hasPosting {
 			keyBuf[account.Name][hive.PostingKeyRole], err = hivego.DecodePublicKey(
-				account.Posting.KeyAuths[0][0].(string),
+				account.KeySet.Posting.KeyAuths[0][0].(string),
 			)
 			if err != nil {
 				return fmt.Errorf(

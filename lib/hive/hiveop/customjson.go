@@ -8,7 +8,7 @@ import (
 
 // CustomJson implements Operation
 type CustomJson struct {
-	*hivego.CustomJsonOperation
+	*hivego.CustomJsonOperation `json:",inline"`
 }
 
 func (c *CustomJson) SigningAuthorities() []hive.SigningAuthorities {
