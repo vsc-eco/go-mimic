@@ -9,6 +9,7 @@ import (
 	"mimic/lib/hive/hiveop"
 	"mimic/lib/utils"
 	"mimic/modules/db/mimic/accountdb"
+	"mimic/modules/producers/opvalidator"
 	"time"
 
 	"github.com/decred/dcrd/dcrec/secp256k1/v2"
@@ -25,6 +26,22 @@ type keyTypeCache = map[string]map[hive.KeyRole]*secp256k1.PublicKey
 func ValidateTransaction(transaction *hivego.HiveTransaction) error {
 	if len(transaction.Signatures) == 0 {
 		return errMissingSignature
+	}
+
+	// validate operations
+	for _, op := range transaction.Operations {
+		v, err := opvalidator.NewValidator(op.OpName())
+		if err != nil {
+			if errors.Is(err, opvalidator.ErrUnimplementedValidator) {
+				panic(err)
+			} else {
+				return err
+			}
+		}
+
+		if err := v.ValidateOperation(op); err != nil {
+			return err
+		}
 	}
 
 	// sereialize transaction

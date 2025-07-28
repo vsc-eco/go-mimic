@@ -7,7 +7,7 @@ import (
 	"github.com/vsc-eco/hivego"
 )
 
-var errInvalidOperationType = errors.New("invalid operation type")
+var ErrUnimplementedValidator = errors.New("invalid operation type")
 
 type OperationValidator interface {
 	ValidateOperation(hivego.HiveOperation) error
