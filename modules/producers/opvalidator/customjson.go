@@ -1,11 +1,29 @@
 package opvalidator
 
-import "github.com/vsc-eco/hivego"
+import (
+	"errors"
 
-type customJsonValidator struct{}
+	"github.com/go-playground/validator/v10"
+	"github.com/vsc-eco/hivego"
+)
 
-func (c *customJsonValidator) Validate(
-	_ hivego.HiveOperation,
-) error {
-	panic("not implemented") // TODO: Implement
+type customJsonValidator struct {
+	*validator.Validate
+}
+
+func (c *customJsonValidator) ValidateOperation(o hivego.HiveOperation) error {
+	op, ok := o.(*hivego.CustomJsonOperation)
+	if !ok {
+		return errInvalidOperationType
+	}
+
+	if len(op.RequiredAuths) == 0 && len(op.RequiredPostingAuths) == 0 {
+		return errors.New("missing required auths")
+	}
+
+	return validateFields(
+		c.Validate,
+		fieldV{op.Json, "required,json"},
+		fieldV{op.Id, "required"},
+	)
 }
