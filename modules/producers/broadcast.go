@@ -52,25 +52,9 @@ func ValidateTransaction(transaction *hivego.HiveTransaction) error {
 	}
 
 	// get required pub keys
-	keyBuf := make(keyTypeCache)
 
-	for _, opRaw := range transaction.OperationsJs {
-		op, err := getOp(opRaw)
-		if err != nil {
-			panic(err)
-		}
-
-		for _, auth := range op.SigningAuthorities() {
-			if _, ok := keyBuf[auth.Account]; !ok {
-				keyBuf[auth.Account] = make(
-					map[hive.KeyRole]*secp256k1.PublicKey,
-				)
-			}
-			keyBuf[auth.Account][auth.KeyType] = nil
-		}
-	}
-
-	if err := getPubKeys(keyBuf); err != nil {
+	keyBuf, err := getPubKeys(transaction)
+	if err != nil {
 		return err
 	}
 
@@ -113,7 +97,25 @@ func pubKeyIncluded(
 	return false
 }
 
-func getPubKeys(keyBuf keyTypeCache) error {
+func getPubKeys(transaction *hivego.HiveTransaction) (keyTypeCache, error) {
+	keyBuf := make(keyTypeCache)
+
+	for _, opRaw := range transaction.OperationsJs {
+		op, err := getOp(opRaw)
+		if err != nil {
+			panic(err)
+		}
+
+		for _, auth := range op.SigningAuthorities() {
+			if _, ok := keyBuf[auth.Account]; !ok {
+				keyBuf[auth.Account] = make(
+					map[hive.KeyRole]*secp256k1.PublicKey,
+				)
+			}
+			keyBuf[auth.Account][auth.KeyType] = nil
+		}
+	}
+
 	signingAuths := []string{}
 	for k := range keyBuf {
 		signingAuths = append(signingAuths, k)
@@ -125,19 +127,19 @@ func getPubKeys(keyBuf keyTypeCache) error {
 	err := accountdb.Collection().
 		QueryPubKeysByAccount(ctx, keyBuf, signingAuths)
 	if err != nil {
-		return fmt.Errorf("failed to query for public keys: %w", err)
+		return nil, fmt.Errorf("failed to query for public keys: %w", err)
 	}
 
 	// if any key is missing (ie, an empty string), then return an error
 	for _, account := range keyBuf {
 		for _, keyType := range account {
 			if keyType == nil {
-				return errMissingKey
+				return nil, errMissingKey
 			}
 		}
 	}
 
-	return nil
+	return keyBuf, nil
 }
 
 func getOp(operation [2]any) (hiveop.Operation, error) {
