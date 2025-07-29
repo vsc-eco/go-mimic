@@ -2,10 +2,83 @@ package condenser
 
 import (
 	"encoding/json"
+	"fmt"
 	"mimic/lib/encoder"
+	"mimic/lib/validator"
 
 	"github.com/vsc-eco/hivego"
 )
+
+type CondenserParam struct {
+	Trx *hivego.HiveTransaction `json:"trx,omitempty" validate:"required"`
+}
+
+func (p *CondenserParam) MarshalJSON() ([]byte, error) {
+	fmt.Println("Marshaling CondenserParam")
+
+	p.Trx.OperationsJs = make([][2]any, len(p.Trx.Operations))
+	for i, op := range p.Trx.Operations {
+		p.Trx.OperationsJs[i] = [2]any{op.OpName(), op}
+	}
+
+	return json.Marshal(map[string]any{"trx": p.Trx})
+}
+
+func (p *CondenserParam) UnmarshalJSON(data []byte) error {
+	// the call to json.Unmarshal will invoke the function
+	// `json.Unmarshaler.UnmarshalJSON()`, resulting in a infinite recursion.
+	// to avoid the recusrive call to `UnmarshalJSON`, alias the type
+	type Alias CondenserParam
+	if err := json.Unmarshal(data, (*Alias)(p)); err != nil {
+		return err
+	}
+
+	if err := validator.New().Struct(p); err != nil {
+		return err
+	}
+
+	p.Trx.Operations = make([]hivego.HiveOperation, len(p.Trx.OperationsJs))
+	for i, opRaw := range p.Trx.OperationsJs {
+		trxBuf, err := parseTrxType(opRaw[0].(string))
+		if err != nil {
+			return err
+		}
+
+		if err := serializeToStruct(trxBuf, opRaw[1]); err != nil {
+			return err
+		}
+
+		p.Trx.Operations[i] = trxBuf
+	}
+
+	return nil
+}
+
+func parseTrxType(opName string) (hivego.HiveOperation, error) {
+	switch opName {
+	case "custom_json":
+		return &hivego.CustomJsonOperation{}, nil
+
+	default:
+		return nil, fmt.Errorf(
+			"transaction typed %s does not implement hivego.HiveOperation interface",
+			opName,
+		)
+	}
+}
+
+func serializeToStruct(buf hivego.HiveOperation, data any) error {
+	j, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+
+	if err := json.Unmarshal(j, buf); err != nil {
+		return err
+	}
+
+	return validator.New().Struct(buf)
+}
 
 type BroadcastParam[T any] struct {
 	Action string

@@ -17,6 +17,7 @@ type AccountQuery interface {
 	InsertAccount(context.Context, *Account) error
 	UpdateAccount(context.Context, *Account) error
 	QueryAccountByNames(context.Context, *[]Account, []string) error
+	QueryAccountByPubKeyWIF(context.Context, *Account, string) error
 }
 
 type AccountDB struct {
