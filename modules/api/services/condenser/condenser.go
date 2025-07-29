@@ -267,7 +267,6 @@ func (t *Condenser) Expose(rm services.RegisterMethod) {
 	rm("broadcast_transaction_synchronous", "BroadcastTransactionSynchronous")
 	rm("get_accounts", "GetAccounts")
 	rm("account_create", "AccountCreate")
-	rm("account_update", "AccountUpdate")
 }
 
 // Filters elements from `data` that matches the predicate `filterFunc`, then

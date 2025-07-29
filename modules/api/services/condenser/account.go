@@ -2,21 +2,11 @@ package condenser
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"mimic/lib/utils"
 	"mimic/modules/db/mimic/accountdb"
 	"time"
-
-	"github.com/vsc-eco/hivego"
 )
-
-func (c *Condenser) AccountUpdate(
-	arg *hivego.HiveTransaction,
-	reply *any,
-) {
-	fmt.Println(arg, reply)
-}
 
 func (c *Condenser) AccountCreate(
 	arg *BroadcastParam[AccountCreateParam],

@@ -14,8 +14,6 @@ type CondenserParam struct {
 }
 
 func (p *CondenserParam) MarshalJSON() ([]byte, error) {
-	fmt.Println("Marshaling CondenserParam")
-
 	p.Trx.OperationsJs = make([][2]any, len(p.Trx.Operations))
 	for i, op := range p.Trx.Operations {
 		p.Trx.OperationsJs[i] = [2]any{op.OpName(), op}
