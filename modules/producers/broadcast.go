@@ -2,11 +2,13 @@ package producers
 
 import (
 	"context"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"mimic/lib/hive"
 	"mimic/lib/hive/hiveop"
+	"mimic/lib/utils"
 	"mimic/modules/db/mimic/accountdb"
 	"mimic/modules/producers/opvalidator"
 	"time"
@@ -20,7 +22,10 @@ var (
 	errMissingKey       = errors.New("missing key")
 )
 
-type keyTypeCache = map[string]map[hive.KeyRole]*secp256k1.PublicKey
+type (
+	keyTypeCache map[string]map[hive.KeyRole]*secp256k1.PublicKey
+	sigParser    func(string) (*secp256k1.PublicKey, error)
+)
 
 func ValidateTransaction(transaction *hivego.HiveTransaction) error {
 	if len(transaction.Signatures) == 0 {
@@ -43,56 +48,44 @@ func ValidateTransaction(transaction *hivego.HiveTransaction) error {
 		}
 	}
 
-	// sereialize transaction
+	// validate signatures
+
+	// serialize transaction
 	txBytes, err := hivego.SerializeTx(*transaction)
 	if err != nil {
 		return err
 	}
 
-	fmt.Println(len(txBytes))
+	txBytes = hivego.HashTxForSig(txBytes)
+
+	// extracted pub keys from signatures
+	signedPks, err := utils.TryMap(
+		transaction.Signatures,
+		extractPubKeys(txBytes),
+	)
+	if err != nil {
+		return err
+	}
 
 	// get required pub keys
-
 	keyBuf, err := getPubKeys(transaction)
 	if err != nil {
 		return err
 	}
 
-	fmt.Println(keyBuf)
+	pubKeyBuf := make([]*secp256k1.PublicKey, 0)
+	for _, pubKey := range keyBuf {
+		for _, key := range pubKey {
+			pubKeyBuf = append(pubKeyBuf, key)
+		}
+	}
 
-	// pubKeyBuf := make([]*secp256k1.PublicKey, 0)
-	// for _, pubKey := range keyBuf {
-	// 	for _, key := range pubKey {
-	// 		pubKeyBuf = append(pubKeyBuf, key)
-	// 	}
-	// }
-
-	// utils.TryForEach(pubKeyBuf, func(t *secp256k1.PublicKey) error {
-	// 	pubKeyStr := hivego.GetPublicKeyString(t)
-	// 	fmt.Println(*pubKeyStr)
-	// 	return nil
-	// })
-
-	// // verify each signature
-	// sigsBytes, err := utils.TryMap(transaction.Signatures, hex.DecodeString)
-
-	// fmt.Println("extracted pub keys")
-	// for _, sig := range sigsBytes {
-	// 	pubKey, compact, err := secp256k1.RecoverCompact(sig, txBytes)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-
-	// 	fmt.Println(*hivego.GetPublicKeyString(pubKey))
-
-	// 	if !compact {
-	// 		return errors.New("uncompacted key not supported")
-	// 	}
-
-	// 	if !pubKeyIncluded(pubKeyBuf, pubKey) {
-	// 		return errMissingKey
-	// 	}
-	// }
+	// validate the key exists
+	for _, pk := range signedPks {
+		if !pubKeyIncluded(pubKeyBuf, pk) {
+			return errMissingKey
+		}
+	}
 
 	return nil
 }
@@ -107,6 +100,29 @@ func pubKeyIncluded(
 		}
 	}
 	return false
+}
+
+func extractPubKeys(txDigest []byte) sigParser {
+	return func(sigStr string) (*secp256k1.PublicKey, error) {
+		sigByte, err := hex.DecodeString(sigStr)
+		if err != nil {
+			return nil, err
+		}
+
+		pubKey, compacted, err := secp256k1.RecoverCompact(
+			sigByte,
+			txDigest,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		if !compacted {
+			return nil, errors.New("expected compacted signatures")
+		}
+
+		return pubKey, nil
+	}
 }
 
 func getPubKeys(transaction *hivego.HiveTransaction) (keyTypeCache, error) {
