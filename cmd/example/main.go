@@ -66,7 +66,7 @@ var transactionType = map[string]jsonrpcMethod{
 */
 
 func init() {
-	privKeyWIF := utils.EnvOrPanic("TEST_OWNER_KEY_PRIVATE")
+	privKeyWIF := utils.EnvOrPanic("TEST_POSTING_KEY_PRIVATE")
 
 	var err error
 	testUserKey, err = hivego.KeyPairFromWif(privKeyWIF)

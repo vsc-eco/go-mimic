@@ -2,13 +2,11 @@ package producers
 
 import (
 	"context"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"mimic/lib/hive"
 	"mimic/lib/hive/hiveop"
-	"mimic/lib/utils"
 	"mimic/modules/db/mimic/accountdb"
 	"mimic/modules/producers/opvalidator"
 	"time"
@@ -51,6 +49,8 @@ func ValidateTransaction(transaction *hivego.HiveTransaction) error {
 		return err
 	}
 
+	fmt.Println(len(txBytes))
+
 	// get required pub keys
 
 	keyBuf, err := getPubKeys(transaction)
@@ -58,29 +58,41 @@ func ValidateTransaction(transaction *hivego.HiveTransaction) error {
 		return err
 	}
 
-	pubKeyBuf := make([]*secp256k1.PublicKey, 0)
-	for _, pubKey := range keyBuf {
-		for _, key := range pubKey {
-			pubKeyBuf = append(pubKeyBuf, key)
-		}
-	}
+	fmt.Println(keyBuf)
 
-	// verify each signature
-	sigsBytes, err := utils.TryMap(transaction.Signatures, hex.DecodeString)
-	for _, sig := range sigsBytes {
-		pubKey, compact, err := secp256k1.RecoverCompact(sig, txBytes)
-		if err != nil {
-			return err
-		}
+	// pubKeyBuf := make([]*secp256k1.PublicKey, 0)
+	// for _, pubKey := range keyBuf {
+	// 	for _, key := range pubKey {
+	// 		pubKeyBuf = append(pubKeyBuf, key)
+	// 	}
+	// }
 
-		if !compact {
-			return errors.New("uncompacted key not supported")
-		}
+	// utils.TryForEach(pubKeyBuf, func(t *secp256k1.PublicKey) error {
+	// 	pubKeyStr := hivego.GetPublicKeyString(t)
+	// 	fmt.Println(*pubKeyStr)
+	// 	return nil
+	// })
 
-		if !pubKeyIncluded(pubKeyBuf, pubKey) {
-			return errMissingKey
-		}
-	}
+	// // verify each signature
+	// sigsBytes, err := utils.TryMap(transaction.Signatures, hex.DecodeString)
+
+	// fmt.Println("extracted pub keys")
+	// for _, sig := range sigsBytes {
+	// 	pubKey, compact, err := secp256k1.RecoverCompact(sig, txBytes)
+	// 	if err != nil {
+	// 		return err
+	// 	}
+
+	// 	fmt.Println(*hivego.GetPublicKeyString(pubKey))
+
+	// 	if !compact {
+	// 		return errors.New("uncompacted key not supported")
+	// 	}
+
+	// 	if !pubKeyIncluded(pubKeyBuf, pubKey) {
+	// 		return errMissingKey
+	// 	}
+	// }
 
 	return nil
 }
