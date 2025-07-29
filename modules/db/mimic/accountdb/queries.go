@@ -136,7 +136,7 @@ func (a *AccountDB) QueryPubKeysByAccount(
 	}
 
 	var buf []Account
-	if err := cur.Decode(&buf); err != nil {
+	if err := cur.All(ctx, &buf); err != nil {
 		return err
 	}
 
