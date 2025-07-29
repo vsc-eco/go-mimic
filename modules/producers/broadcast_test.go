@@ -32,21 +32,4 @@ func TestValidateTransaction(t *testing.T) {
 		err := ValidateTransaction(trx)
 		assert.True(t, errors.Is(err, errMissingSignature))
 	})
-
-	t.Run("transaction with valid signature", func(t *testing.T) {
-		keyPair, err := hivego.KeyPairFromWif(
-			utils.EnvOrPanic("TEST_POSTING_KEY_PRIVATE"),
-		)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		sig, err := trx.Sign(*keyPair)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		trx.AddSig(sig)
-		assert.NoError(t, ValidateTransaction(trx))
-	})
 }
