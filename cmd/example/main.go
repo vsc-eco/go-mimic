@@ -87,26 +87,30 @@ func main() {
 		requestsExec = append(requestsExec, args[1:]...)
 	}
 
-	for _, r := range requestsExec {
-		log.Println("executing:", r)
-		content, err := executeMethod(r)
-		if err != nil {
-			log.Println("method failed:", err)
-			continue
-		}
-
+	log.Println("broadcasting ops:", requestsExec)
+	content, err := executeMethod(requestsExec)
+	if err != nil {
+		log.Println("method failed:", err)
+	} else {
 		log.Println("method ok:")
 		fmt.Println(string(content))
 	}
 }
 
-func executeMethod(jsonrpcMethod string) ([]byte, error) {
-	b, ok := transactionType[jsonrpcMethod]
-	if !ok {
-		return nil, errUnsupportedMethod
+func executeMethod(jsonrpcMethods []string) ([]byte, error) {
+	var (
+		ok bool
+		bb = make([]jsonrpcMethod, len(jsonrpcMethods))
+	)
+
+	for i, method := range jsonrpcMethods {
+		bb[i], ok = transactionType[method]
+		if !ok {
+			return nil, errUnsupportedMethod
+		}
 	}
 
-	trx, err := makeTransaction(b)
+	trx, err := makeTransaction(bb)
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +125,7 @@ type jsonrpcRequest struct {
 	Params  any    `json:"params"`
 }
 
-func makeTransaction(b jsonrpcMethod) (*hivego.HiveTransaction, error) {
+func makeTransaction(b []jsonrpcMethod) (*hivego.HiveTransaction, error) {
 	// query global props
 	props, err := httpClient.queryGlobalProps()
 	if err != nil {
@@ -150,8 +154,12 @@ func makeTransaction(b jsonrpcMethod) (*hivego.HiveTransaction, error) {
 		RefBlockNum:    refBlockNum,
 		RefBlockPrefix: refBlockPrefix,
 		Extensions:     []string{},
-		Operations:     []hivego.HiveOperation{b.params()},
+		Operations:     make([]hivego.HiveOperation, len(b)),
 		Signatures:     []string{},
+	}
+
+	for i, m := range b {
+		trx.Operations[i] = m.params()
 	}
 
 	return &trx, nil

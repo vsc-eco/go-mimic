@@ -1,16 +1,19 @@
 package main
 
-import "github.com/vsc-eco/hivego"
+import (
+	"mimic/lib/hive"
+
+	"github.com/vsc-eco/hivego"
+)
 
 type accountUpdate struct{}
 
 func (a *accountUpdate) params() hivego.HiveOperation {
+	keyset := hive.MakeHiveKeySet("foo", "bar")
+
 	return &hivego.AccountUpdateOperation{
 		Account:      "foo",
-		Owner:        nil,
-		Active:       nil,
-		Posting:      nil,
-		MemoKey:      "",
+		MemoKey:      *keyset.MemoKey().GetPublicKeyString(),
 		JsonMetadata: "{}",
 	}
 }

@@ -42,6 +42,7 @@ type HiveKeySet struct {
 	ownerKey   HiveKey
 	activeKey  HiveKey
 	postingKey HiveKey
+	memoKey    HiveKey
 }
 
 func MakeHiveKeySet(account, password string) HiveKeySet {
@@ -66,12 +67,21 @@ func MakeHiveKeySet(account, password string) HiveKeySet {
 		password,
 	)
 
+	// make memo key
+	key.memoKey = makeHiveKey(
+		nil,
+		MemoKeyRole,
+		account,
+		password,
+	)
+
 	return key
 }
 
 func (h *HiveKeySet) OwnerKey() *HiveKey   { return &h.ownerKey }
 func (h *HiveKeySet) ActiveKey() *HiveKey  { return &h.activeKey }
 func (h *HiveKeySet) PostingKey() *HiveKey { return &h.postingKey }
+func (h *HiveKeySet) MemoKey() *HiveKey    { return &h.memoKey }
 
 func (h *HiveKey) PrivateKeyWif() string {
 	privKeyRaw := h.PrivateKey.Serialize()
