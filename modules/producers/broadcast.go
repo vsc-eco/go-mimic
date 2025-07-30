@@ -11,6 +11,7 @@ import (
 	"mimic/lib/utils"
 	"mimic/modules/db/mimic/accountdb"
 	"mimic/modules/producers/opvalidator"
+	"slices"
 	"time"
 
 	"github.com/decred/dcrd/dcrec/secp256k1/v2"
@@ -30,16 +31,17 @@ type (
 		Expired  bool   `json:"expired"`
 	}
 
-	keyTypeCache       map[string]map[hive.KeyRole]*secp256k1.PublicKey
-	sigParser          func(string) (*secp256k1.PublicKey, error)
-	transactionRequest struct {
+	keyTypeCache    map[string]map[hive.KeyRole]*secp256k1.PublicKey
+	pubKeyExtractor func(string) (*secp256k1.PublicKey, error)
+
+	trxRequest struct {
 		comm chan BroadcastTransactionResponse
 		trx  *hivego.HiveTransaction
 	}
 )
 
-func BroadcastTransactions(trx *hivego.HiveTransaction) transactionRequest {
-	req := transactionRequest{
+func BroadcastTransactions(trx *hivego.HiveTransaction) trxRequest {
+	req := trxRequest{
 		comm: make(chan BroadcastTransactionResponse),
 		trx:  trx,
 	}
@@ -47,56 +49,43 @@ func BroadcastTransactions(trx *hivego.HiveTransaction) transactionRequest {
 	return req
 }
 
-func (t *transactionRequest) Response() BroadcastTransactionResponse {
+func (t *trxRequest) Response() BroadcastTransactionResponse {
 	return <-t.comm
 }
 
-func (t *transactionRequest) Close() {
+func (t *trxRequest) Close() {
 	close(t.comm)
 }
 
-func ValidateTransaction(transaction *hivego.HiveTransaction) error {
-	if len(transaction.Signatures) == 0 {
+func ValidateTransaction(trx *hivego.HiveTransaction) error {
+	if len(trx.Signatures) == 0 {
 		return errMissingSignature
 	}
 
 	// validate operations
-	for _, op := range transaction.Operations {
-		v, err := opvalidator.NewValidator(op.OpName())
-		if err != nil {
-			if errors.Is(err, opvalidator.ErrValidatorNotImplemented) {
-				panic(err)
-			} else {
-				return fmt.Errorf("failed to get validator for operation %s: %w", op.OpName(), err)
-			}
-		}
-
-		if err := v.ValidateOperation(op); err != nil {
-			return err
-		}
+	if err := utils.TryForEach(trx.Operations, validateOp); err != nil {
+		return err
 	}
 
 	// validate signatures
 
 	// serialize transaction
-	txBytes, err := hivego.SerializeTx(*transaction)
+	trxBytes, err := hivego.SerializeTx(*trx)
 	if err != nil {
 		return err
 	}
 
-	txBytes = hivego.HashTxForSig(txBytes)
+	trxBytes = hivego.HashTxForSig(trxBytes)
+	extractor := makePubkeyExtractor(trxBytes)
 
 	// extracted pub keys from signatures
-	signedPks, err := utils.TryMap(
-		transaction.Signatures,
-		extractPubKeys(txBytes),
-	)
+	signedPks, err := utils.TryMap(trx.Signatures, extractor)
 	if err != nil {
 		return err
 	}
 
 	// get required pub keys
-	keyBuf, err := getPubKeys(transaction)
+	keyBuf, err := getPubKeys(trx)
 	if err != nil {
 		return err
 	}
@@ -110,7 +99,7 @@ func ValidateTransaction(transaction *hivego.HiveTransaction) error {
 
 	// validate the key exists
 	for _, pk := range signedPks {
-		if !pubKeyIncluded(pubKeyBuf, pk) {
+		if !slices.Contains(pubKeyBuf, pk) {
 			return errMissingKey
 		}
 	}
@@ -118,19 +107,16 @@ func ValidateTransaction(transaction *hivego.HiveTransaction) error {
 	return nil
 }
 
-func pubKeyIncluded(
-	pubKeyBuf []*secp256k1.PublicKey,
-	key *secp256k1.PublicKey,
-) bool {
-	for _, k := range pubKeyBuf {
-		if k.IsEqual(key) {
-			return true
-		}
+func validateOp(op hivego.HiveOperation) error {
+	v, err := opvalidator.NewValidator(op.OpName())
+	if err != nil {
+		return err
 	}
-	return false
+
+	return v.ValidateOperation(op)
 }
 
-func extractPubKeys(txDigest []byte) sigParser {
+func makePubkeyExtractor(txDigest []byte) pubKeyExtractor {
 	return func(sigStr string) (*secp256k1.PublicKey, error) {
 		sigByte, err := hex.DecodeString(sigStr)
 		if err != nil {
