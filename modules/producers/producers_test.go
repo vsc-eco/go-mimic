@@ -8,37 +8,12 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/vsc-eco/hivego"
 )
 
 const hiveBlockIDLen = 40
 
-var testTransactions = []any{
-	&testTransaction{
-		ID:     "1",
-		From:   "hive-io-from",
-		To:     "hive-io-to",
-		Amount: 12.0,
-	},
-	&testTransaction{
-		ID:     "2",
-		From:   "hive-io-from",
-		To:     "hive-io-to",
-		Amount: 14.0,
-	},
-	&testTransaction{
-		ID:     "3",
-		From:   "hive-io-from",
-		To:     "hive-io-to",
-		Amount: 16.0,
-	},
-}
-
-type testTransaction struct {
-	ID     string  `json:"id"`
-	From   string  `json:"from"`
-	To     string  `json:"to"`
-	Amount float64 `json:"amount"`
-}
+var testTransactions = []hivego.HiveTransaction{}
 
 func TestMakeBlock(t *testing.T) {
 	var buf []blockdb.HiveBlock
@@ -56,7 +31,7 @@ func TestMakeBlock(t *testing.T) {
 
 	// test for empty merkle tree generation
 	firstBlock := producerBlock{&buf[0]}
-	err = firstBlock.sign([]any{}, witness)
+	err = firstBlock.sign([]hivego.HiveTransaction{}, witness)
 	assert.Nil(t, err)
 	assert.Equal(
 		t,
@@ -66,7 +41,7 @@ func TestMakeBlock(t *testing.T) {
 	)
 
 	// test for second block derivation
-	trx := make([]any, len(testTransactions))
+	trx := make([]hivego.HiveTransaction, len(testTransactions))
 	copy(trx, testTransactions)
 
 	secondBlock := firstBlock.next()
@@ -127,7 +102,7 @@ func TestMakeBlock(t *testing.T) {
 
 	// the merkle root is calculated
 	thirdBlock := secondBlock.next()
-	trxs := make([]any, len(testTransactions))
+	trxs := make([]hivego.HiveTransaction, len(testTransactions))
 	copy(trxs, testTransactions)
 
 	err = thirdBlock.sign(trxs, witness)

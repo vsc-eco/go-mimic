@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/vsc-eco/hivego"
 )
 
 type mockDB struct{}
@@ -39,7 +40,7 @@ func (m *mockDB) QueryHeadBlock(
 		MerkleRoot:       "merkleroot",
 		Extensions:       []any{},
 		WitnessSignature: "go-mimic-witness-sig",
-		Transactions:     []any{},
+		Transactions:     []hivego.HiveTransaction{},
 		TransactionIDs:   []any{},
 		SigningKey:       "signingkey",
 	}
