@@ -1,14 +1,16 @@
 package producers
 
+import "github.com/vsc-eco/hivego"
+
 type transactionRequest struct {
-	comm        chan BroadcastTransactionResponse
-	transaction any // TODO: update this transaction type
+	comm chan BroadcastTransactionResponse
+	trx  *hivego.HiveTransaction
 }
 
-func BroadcastTransactions(trx any) transactionRequest {
+func BroadcastTransactions(trx *hivego.HiveTransaction) transactionRequest {
 	req := transactionRequest{
-		comm:        make(chan BroadcastTransactionResponse),
-		transaction: trx,
+		comm: make(chan BroadcastTransactionResponse),
+		trx:  trx,
 	}
 	producer.trxQueue <- req
 	return req
@@ -16,6 +18,10 @@ func BroadcastTransactions(trx any) transactionRequest {
 
 func (t *transactionRequest) Response() BroadcastTransactionResponse {
 	return <-t.comm
+}
+
+func (t *transactionRequest) Close() {
+	close(t.comm)
 }
 
 type BroadcastTransactionResponse struct {

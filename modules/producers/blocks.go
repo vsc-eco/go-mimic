@@ -9,6 +9,7 @@ import (
 	"slices"
 	"time"
 
+	"github.com/vsc-eco/hivego"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -19,12 +20,15 @@ type producerBlock struct {
 func (b *producerBlock) next() producerBlock {
 	nextBlock := &blockdb.HiveBlock{
 		ObjectID: primitive.NilObjectID,
-		Previous: b.HiveBlock.BlockID,
+		Previous: b.BlockID,
 	}
 	return producerBlock{nextBlock}
 }
 
-func (b *producerBlock) sign(transactions []any, witness Witness) error {
+func (b *producerBlock) sign(
+	transactions []hivego.HiveTransaction,
+	witness Witness,
+) error {
 	b.Timestamp = time.Now().Format(utils.TimeFormat)
 
 	// get block number
@@ -79,7 +83,7 @@ func (b *producerBlock) sign(transactions []any, witness Witness) error {
 	return nil
 }
 
-func generateMerkleRoot(transactions []any) ([]byte, error) {
+func generateMerkleRoot(transactions []hivego.HiveTransaction) ([]byte, error) {
 	// empty merkle tree
 	if len(transactions) == 0 {
 		return make([]byte, merkleRootBlockSize), nil
@@ -135,7 +139,7 @@ func generateMerkleRoot(transactions []any) ([]byte, error) {
 
 func (p *producerBlock) getBlockNum() (uint32, error) {
 	if len(p.BlockID) < 8 {
-		return 0, errors.New("Invalid block id.")
+		return 0, errors.New("invalid block id")
 	}
 
 	blockNumBytes, err := hex.DecodeString(p.BlockID[:8])

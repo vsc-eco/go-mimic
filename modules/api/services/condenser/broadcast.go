@@ -24,4 +24,9 @@ func (c *Condenser) BroadcastTransactionSynchronous(
 		c.Logger.Error("failed to validate transaction", "err", err)
 		return
 	}
+
+	res := producers.BroadcastTransactions(trx)
+	defer res.Close()
+
+	*reply = res.Response()
 }
