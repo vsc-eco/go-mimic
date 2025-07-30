@@ -33,7 +33,7 @@ type HiveBlock struct {
 	Extensions       []any                    `json:"extensions"`
 	WitnessSignature string                   `json:"witness_signature"`
 	Transactions     []hivego.HiveTransaction `json:"transactions"`
-	TransactionIDs   []any                    `json:"transaction_ids"`
+	TransactionIDs   []string                 `json:"transaction_ids"`
 	SigningKey       string                   `json:"signing_key"`
 }
 

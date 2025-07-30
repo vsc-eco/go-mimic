@@ -20,7 +20,7 @@ const (
 var producer *Producer = nil
 
 type Producer struct {
-	trxQueue chan transactionRequest
+	trxQueue chan trxRequest
 }
 
 func New() *Producer {
@@ -30,7 +30,7 @@ func New() *Producer {
 
 // Runs initialization in order of how they are passed in to `Aggregate`
 func (p *Producer) Init() error {
-	p.trxQueue = make(chan transactionRequest, 100) // bufferred
+	p.trxQueue = make(chan trxRequest, 100) // bufferred
 
 	return nil
 }
@@ -81,8 +81,8 @@ func (p *Producer) produceBlocks(interval time.Duration) {
 	}
 }
 
-func (p *Producer) batchTransactions() []transactionRequest {
-	requests := make([]transactionRequest, len(p.trxQueue))
+func (p *Producer) batchTransactions() []trxRequest {
+	requests := make([]trxRequest, len(p.trxQueue))
 	for i := range requests {
 		requests[i] = <-p.trxQueue
 	}
@@ -94,11 +94,15 @@ var stubWitness = Witness{
 }
 
 func (p *Producer) makeBlock(
-	requests []transactionRequest,
+	broadcastedTrx []trxRequest,
 	block producerBlock,
 ) (*producerBlock, error) {
-	transactions := make([]hivego.HiveTransaction, 0, len(requests))
-	if err := block.sign(transactions, stubWitness); err != nil {
+	defer utils.ForEach(broadcastedTrx, func(trx trxRequest) {
+		close(trx.comm)
+	})
+
+	trx := make([]hivego.HiveTransaction, 0, len(broadcastedTrx))
+	if err := block.sign(trx, stubWitness); err != nil {
 		return nil, err
 	}
 
@@ -110,19 +114,17 @@ func (p *Producer) makeBlock(
 		return nil, err
 	}
 
-	for _, req := range requests {
+	for reqIndex, req := range broadcastedTrx {
 		req.comm <- BroadcastTransactionResponse{
 			BlockNum: block.BlockNum,
-			// TODO: fill these out
-			ID:      "",
-			TrxNum:  0,
-			Expired: false,
+			ID:       block.BlockID,
+			TrxNum:   uint32(reqIndex + 1),
+			Expired:  false,
 		}
-		close(req.comm)
 	}
 
 	slog.Debug("New block produced.",
-		"transactions", len(requests),
+		"transactions", len(broadcastedTrx),
 		"block-num", block.BlockNum)
 
 	return &block, nil

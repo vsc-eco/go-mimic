@@ -52,10 +52,6 @@ func (t *trxRequest) Response() BroadcastTransactionResponse {
 	return <-t.comm
 }
 
-func (t *trxRequest) Close() {
-	close(t.comm)
-}
-
 func ValidateTransaction(trx *hivego.HiveTransaction) error {
 	if len(trx.Signatures) == 0 {
 		return errMissingSignature

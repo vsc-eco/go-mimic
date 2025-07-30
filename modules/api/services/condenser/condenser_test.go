@@ -41,7 +41,7 @@ func (m *mockDB) QueryHeadBlock(
 		Extensions:       []any{},
 		WitnessSignature: "go-mimic-witness-sig",
 		Transactions:     []hivego.HiveTransaction{},
-		TransactionIDs:   []any{},
+		TransactionIDs:   []string{},
 		SigningKey:       "signingkey",
 	}
 

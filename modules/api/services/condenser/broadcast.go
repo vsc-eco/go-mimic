@@ -26,7 +26,6 @@ func (c *Condenser) BroadcastTransactionSynchronous(
 	}
 
 	res := producers.BroadcastTransactions(trx)
-	defer res.Close()
 
 	*reply = res.Response()
 }

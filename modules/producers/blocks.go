@@ -77,10 +77,16 @@ func (b *producerBlock) sign(
 	b.Witness = witness.name
 	b.Transactions = transactions
 	b.MerkleRoot = hex.EncodeToString(merkleRoot)
-	// TODO: generate valid transaction id
-	b.TransactionIDs = make([]any, len(transactions))
 
-	return nil
+	// transaction IDs
+	b.TransactionIDs, err = utils.TryMap(
+		transactions,
+		func(trx hivego.HiveTransaction) (string, error) {
+			return trx.GenerateTrxId()
+		},
+	)
+
+	return err
 }
 
 func generateMerkleRoot(transactions []hivego.HiveTransaction) ([]byte, error) {

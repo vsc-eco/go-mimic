@@ -24,3 +24,9 @@ func TryForEach[T any](a []T, fn func(T) error) error {
 	}
 	return nil
 }
+
+func ForEach[T any](a []T, fn func(T)) {
+	for _, v := range a {
+		fn(v)
+	}
+}
