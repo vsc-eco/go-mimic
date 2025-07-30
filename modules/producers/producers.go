@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/chebyrash/promise"
+	"github.com/vsc-eco/hivego"
 )
 
 const (
@@ -96,14 +97,7 @@ func (p *Producer) makeBlock(
 	requests []transactionRequest,
 	block producerBlock,
 ) (*producerBlock, error) {
-	transactions := make([]any, 0, len(requests))
-	// for _, request := range requests {
-	// 	for _, trx := range request.transaction {
-	// 		transactions = slices.Concat(transactions, trx.Operations)
-	// 		// TODO: validate the signature
-	// 	}
-	// }
-
+	transactions := make([]hivego.HiveTransaction, 0, len(requests))
 	if err := block.sign(transactions, stubWitness); err != nil {
 		return nil, err
 	}

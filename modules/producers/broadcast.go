@@ -23,9 +23,37 @@ var (
 )
 
 type (
-	keyTypeCache map[string]map[hive.KeyRole]*secp256k1.PublicKey
-	sigParser    func(string) (*secp256k1.PublicKey, error)
+	BroadcastTransactionResponse struct {
+		ID       string `json:"id"`
+		BlockNum uint32 `json:"block_num"`
+		TrxNum   uint32 `json:"trx_num"`
+		Expired  bool   `json:"expired"`
+	}
+
+	keyTypeCache       map[string]map[hive.KeyRole]*secp256k1.PublicKey
+	sigParser          func(string) (*secp256k1.PublicKey, error)
+	transactionRequest struct {
+		comm chan BroadcastTransactionResponse
+		trx  *hivego.HiveTransaction
+	}
 )
+
+func BroadcastTransactions(trx *hivego.HiveTransaction) transactionRequest {
+	req := transactionRequest{
+		comm: make(chan BroadcastTransactionResponse),
+		trx:  trx,
+	}
+	producer.trxQueue <- req
+	return req
+}
+
+func (t *transactionRequest) Response() BroadcastTransactionResponse {
+	return <-t.comm
+}
+
+func (t *transactionRequest) Close() {
+	close(t.comm)
+}
 
 func ValidateTransaction(transaction *hivego.HiveTransaction) error {
 	if len(transaction.Signatures) == 0 {
