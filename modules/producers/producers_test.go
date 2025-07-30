@@ -13,7 +13,7 @@ import (
 
 const hiveBlockIDLen = 40
 
-var testTransactions = []hivego.HiveTransaction{}
+var testTransactions = []*hivego.HiveTransaction{}
 
 func TestMakeBlock(t *testing.T) {
 	var buf []blockdb.HiveBlock
@@ -31,7 +31,7 @@ func TestMakeBlock(t *testing.T) {
 
 	// test for empty merkle tree generation
 	firstBlock := producerBlock{&buf[0]}
-	err = firstBlock.sign([]hivego.HiveTransaction{}, witness)
+	err = firstBlock.sign([]*hivego.HiveTransaction{}, witness)
 	assert.Nil(t, err)
 	assert.Equal(
 		t,
@@ -41,7 +41,7 @@ func TestMakeBlock(t *testing.T) {
 	)
 
 	// test for second block derivation
-	trx := make([]hivego.HiveTransaction, len(testTransactions))
+	trx := make([]*hivego.HiveTransaction, len(testTransactions))
 	copy(trx, testTransactions)
 
 	secondBlock := firstBlock.next()
@@ -102,7 +102,7 @@ func TestMakeBlock(t *testing.T) {
 
 	// the merkle root is calculated
 	thirdBlock := secondBlock.next()
-	trxs := make([]hivego.HiveTransaction, len(testTransactions))
+	trxs := make([]*hivego.HiveTransaction, len(testTransactions))
 	copy(trxs, testTransactions)
 
 	err = thirdBlock.sign(trxs, witness)

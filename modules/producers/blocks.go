@@ -26,7 +26,7 @@ func (b *producerBlock) next() producerBlock {
 }
 
 func (b *producerBlock) sign(
-	transactions []hivego.HiveTransaction,
+	transactions []*hivego.HiveTransaction,
 	witness Witness,
 ) error {
 	b.Timestamp = time.Now().Format(utils.TimeFormat)
@@ -75,21 +75,26 @@ func (b *producerBlock) sign(
 	// write to new block
 	b.BlockID = hex.EncodeToString(blockDigest)
 	b.Witness = witness.name
-	b.Transactions = transactions
+	b.Transactions = utils.Map(
+		transactions,
+		func(trx **hivego.HiveTransaction) hivego.HiveTransaction { return **trx },
+	)
 	b.MerkleRoot = hex.EncodeToString(merkleRoot)
 
 	// transaction IDs
 	b.TransactionIDs, err = utils.TryMap(
 		transactions,
-		func(trx hivego.HiveTransaction) (string, error) {
-			return trx.GenerateTrxId()
+		func(trx **hivego.HiveTransaction) (string, error) {
+			return (*trx).GenerateTrxId()
 		},
 	)
 
 	return err
 }
 
-func generateMerkleRoot(transactions []hivego.HiveTransaction) ([]byte, error) {
+func generateMerkleRoot(
+	transactions []*hivego.HiveTransaction,
+) ([]byte, error) {
 	// empty merkle tree
 	if len(transactions) == 0 {
 		return make([]byte, merkleRootBlockSize), nil

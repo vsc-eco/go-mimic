@@ -31,7 +31,7 @@ type (
 	}
 
 	keyTypeCache    map[string]map[hive.KeyRole]*secp256k1.PublicKey
-	pubKeyExtractor func(string) (*secp256k1.PublicKey, error)
+	pubKeyExtractor func(*string) (*secp256k1.PublicKey, error)
 
 	trxRequest struct {
 		comm chan BroadcastTransactionResponse
@@ -125,8 +125,8 @@ func validateOp(op hivego.HiveOperation) error {
 }
 
 func makePubkeyExtractor(txDigest []byte) pubKeyExtractor {
-	return func(sigStr string) (*secp256k1.PublicKey, error) {
-		sigByte, err := hex.DecodeString(sigStr)
+	return func(sigStr *string) (*secp256k1.PublicKey, error) {
+		sigByte, err := hex.DecodeString(*sigStr)
 		if err != nil {
 			return nil, err
 		}
