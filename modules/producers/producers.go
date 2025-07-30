@@ -101,7 +101,12 @@ func (p *Producer) makeBlock(
 		close(trx.comm)
 	})
 
-	trx := make([]hivego.HiveTransaction, 0, len(broadcastedTrx))
+	trx := utils.Map(
+		broadcastedTrx,
+		func(req *trxRequest) *hivego.HiveTransaction {
+			return req.trx
+		},
+	)
 	if err := block.sign(trx, stubWitness); err != nil {
 		return nil, err
 	}
