@@ -11,7 +11,6 @@ import (
 	"mimic/lib/utils"
 	"mimic/modules/db/mimic/accountdb"
 	"mimic/modules/producers/opvalidator"
-	"slices"
 	"time"
 
 	"github.com/decred/dcrd/dcrec/secp256k1/v2"
@@ -99,12 +98,25 @@ func ValidateTransaction(trx *hivego.HiveTransaction) error {
 
 	// validate the key exists
 	for _, pk := range signedPks {
-		if !slices.Contains(pubKeyBuf, pk) {
+		if !validKey(pubKeyBuf, pk) {
 			return errMissingKey
 		}
 	}
 
 	return nil
+}
+
+func validKey(
+	pubKeyBuf []*secp256k1.PublicKey,
+	signedPk *secp256k1.PublicKey,
+) bool {
+	for _, pk := range pubKeyBuf {
+		if pk.IsEqual(signedPk) {
+			return true
+		}
+	}
+
+	return false
 }
 
 func validateOp(op hivego.HiveOperation) error {
