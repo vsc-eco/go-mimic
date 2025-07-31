@@ -81,10 +81,10 @@ func (p *Producer) produceBlocks(interval time.Duration) {
 	}
 }
 
-func (p *Producer) batchTransactions() []trxRequest {
-	requests := make([]trxRequest, len(p.trxQueue))
+func (p *Producer) batchTransactions() []*trxRequest {
+	requests := make([]*trxRequest, len(p.trxQueue))
 	for i := range requests {
-		requests[i] = <-p.trxQueue
+		*requests[i] = <-p.trxQueue
 	}
 	return requests
 }
@@ -94,10 +94,10 @@ var stubWitness = Witness{
 }
 
 func (p *Producer) makeBlock(
-	broadcastedTrx []trxRequest,
+	broadcastedTrx []*trxRequest,
 	block producerBlock,
 ) (*producerBlock, error) {
-	defer utils.ForEach(broadcastedTrx, func(trx trxRequest) {
+	defer utils.ForEach(broadcastedTrx, func(trx *trxRequest) {
 		close(trx.comm)
 	})
 

@@ -77,15 +77,15 @@ func (b *producerBlock) sign(
 	b.Witness = witness.name
 	b.Transactions = utils.Map(
 		transactions,
-		func(trx **hivego.HiveTransaction) hivego.HiveTransaction { return **trx },
+		func(trx *hivego.HiveTransaction) hivego.HiveTransaction { return *trx },
 	)
 	b.MerkleRoot = hex.EncodeToString(merkleRoot)
 
 	// transaction IDs
 	b.TransactionIDs, err = utils.TryMap(
 		transactions,
-		func(trx **hivego.HiveTransaction) (string, error) {
-			return (*trx).GenerateTrxId()
+		func(trx *hivego.HiveTransaction) (string, error) {
+			return trx.GenerateTrxId()
 		},
 	)
 
