@@ -33,6 +33,7 @@ require (
 	github.com/panjf2000/ants/v2 v2.8.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect
+	github.com/sourcegraph/jsonrpc2 v0.2.1 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasthttp v1.35.0 // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
