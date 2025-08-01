@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	jsonrpcutils "mimic/lib/utils/jsonrpc"
 	"net/http"
 	"reflect"
 	"strings"
@@ -34,10 +35,7 @@ func (rpc *Handler) Handle(w http.ResponseWriter, r *http.Request) {
 		err := response.SetResult(result)
 		if err != nil {
 			rpc.Logger.Error("failed to sererialize response", "err", err)
-			response.Error = &jsonrpc2.Error{
-				Code:    jsonrpc2.CodeInternalError,
-				Message: "json serialization failed",
-			}
+			response.Error = jsonrpcutils.ErrInternalServer
 		}
 	}
 
@@ -51,10 +49,7 @@ func (rpc *Handler) Handle(w http.ResponseWriter, r *http.Request) {
 func (rpc *Handler) rpcHandle(req *jsonrpc2.Request) (any, *jsonrpc2.Error) {
 	methodSpec, ok := rpc.Routes[req.Method]
 	if !ok {
-		return nil, &jsonrpc2.Error{
-			Code:    jsonrpc2.CodeInvalidRequest,
-			Message: fmt.Sprintf("method not supported %s", req.Method),
-		}
+		return nil, jsonrpcutils.ErrUnsupportedMethod
 	}
 
 	args := reflect.New(methodSpec.ArgType)
@@ -65,10 +60,7 @@ func (rpc *Handler) rpcHandle(req *jsonrpc2.Request) (any, *jsonrpc2.Error) {
 			"err", err,
 		)
 
-		return nil, &jsonrpc2.Error{
-			Code:    jsonrpc2.CodeInvalidRequest,
-			Message: "invalid params",
-		}
+		return nil, jsonrpcutils.NewInvalidRequestErr("invalid params")
 	}
 
 	strs := strings.Split(req.Method, ".")

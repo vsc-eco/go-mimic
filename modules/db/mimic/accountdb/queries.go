@@ -50,14 +50,14 @@ func (a *AccountDB) UpdateAccount(
 	}
 
 	updateDoc := bson.M{"last_account_update": account.LastAccountUpdate}
-	if account.KeySet.Owner != nil {
-		updateDoc["owner"] = account.KeySet.Owner
+	if account.Owner != nil {
+		updateDoc["owner"] = account.Owner
 	}
-	if account.KeySet.Active != nil {
-		updateDoc["active"] = account.KeySet.Active
+	if account.Active != nil {
+		updateDoc["active"] = account.Active
 	}
-	if account.KeySet.Posting != nil {
-		updateDoc["posting"] = account.KeySet.Posting
+	if account.Posting != nil {
+		updateDoc["posting"] = account.Posting
 	}
 	if len(account.JsonMeta) != 0 {
 		updateDoc["json_metadata"] = account.JsonMeta
@@ -151,7 +151,7 @@ func (a *AccountDB) QueryPubKeysByAccount(
 
 		if hasOwner {
 			keyBuf[account.Name][hive.OwnerKeyRole], err = hivego.DecodePublicKey(
-				account.KeySet.Owner.KeyAuths[0][0].(string),
+				account.Owner.KeyAuths[0][0].(string),
 			)
 			if err != nil {
 				return fmt.Errorf(
@@ -164,7 +164,7 @@ func (a *AccountDB) QueryPubKeysByAccount(
 
 		if hasActive {
 			keyBuf[account.Name][hive.ActiveKeyRole], err = hivego.DecodePublicKey(
-				account.KeySet.Active.KeyAuths[0][0].(string),
+				account.Active.KeyAuths[0][0].(string),
 			)
 			if err != nil {
 				return fmt.Errorf(
@@ -177,7 +177,7 @@ func (a *AccountDB) QueryPubKeysByAccount(
 
 		if hasPosting {
 			keyBuf[account.Name][hive.PostingKeyRole], err = hivego.DecodePublicKey(
-				account.KeySet.Posting.KeyAuths[0][0].(string),
+				account.Posting.KeyAuths[0][0].(string),
 			)
 			if err != nil {
 				return fmt.Errorf(

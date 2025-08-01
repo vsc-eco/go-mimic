@@ -26,7 +26,7 @@ type Account struct {
 	VestingShares       string `json:"vesting_shares"`
 	Reputation          int    `json:"reputation"`
 
-	KeySet UserKeySet `json:",inline"`
+	UserKeySet `bson:",inline"`
 }
 
 type UserKeySet struct {

@@ -49,7 +49,7 @@ func (h *serverHandler) newUser(w http.ResponseWriter, r *http.Request) {
 	account := &accountdb.Account{
 		ObjectId: primitive.NilObjectID,
 		Name:     c.Account,
-		KeySet: accountdb.UserKeySet{
+		UserKeySet: accountdb.UserKeySet{
 			Owner:   c.Owner,
 			Active:  c.Active,
 			Posting: c.Posting,
@@ -115,7 +115,7 @@ func (h *serverHandler) updateUser(w http.ResponseWriter, r *http.Request) {
 		JsonMeta:            c.JsonMetadata,
 		JsonPostingMetadata: c.PostingJsonMetadata,
 		LastAccountUpdate:   ts,
-		KeySet: accountdb.UserKeySet{
+		UserKeySet: accountdb.UserKeySet{
 			Owner:   c.Owner,
 			Active:  c.Active,
 			Posting: c.Posting,

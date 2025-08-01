@@ -53,7 +53,7 @@ func (t *trxRequest) Response() BroadcastTransactionResponse {
 }
 
 func ValidateTransaction(trx *hivego.HiveTransaction) error {
-	if len(trx.Signatures) == 0 {
+	if len(trx.Signatures) == 0 && len(trx.Operations) != 0 {
 		return errMissingSignature
 	}
 

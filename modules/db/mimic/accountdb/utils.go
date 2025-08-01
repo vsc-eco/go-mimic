@@ -32,7 +32,7 @@ func GetSeedAccounts() ([]Account, error) {
 	ts := time.Now().Format(utils.TimeFormat)
 	account := Account{
 		Name: username,
-		KeySet: UserKeySet{
+		UserKeySet: UserKeySet{
 			Owner: &hivego.Auths{
 				WeightThreshold: 1,
 				AccountAuths:    [][2]any{{username, 1}},

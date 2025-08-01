@@ -18,7 +18,7 @@ func (c *Condenser) AccountCreate(
 	account := accountdb.Account{
 		Id:   0,
 		Name: a.NewAccountName,
-		KeySet: accountdb.UserKeySet{
+		UserKeySet: accountdb.UserKeySet{
 			Owner:   &a.Owner,
 			Active:  &a.Active,
 			Posting: &a.Posting,
