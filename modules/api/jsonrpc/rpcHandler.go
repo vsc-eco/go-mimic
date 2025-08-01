@@ -49,15 +49,14 @@ func (rpc *Handler) Handle(w http.ResponseWriter, r *http.Request) {
 }
 
 func (rpc *Handler) rpcHandle(req *jsonrpc2.Request) (any, *jsonrpc2.Error) {
-	if rpc.Routes[req.Method] == nil {
+	methodSpec, ok := rpc.Routes[req.Method]
+	if !ok {
 		return nil, &jsonrpc2.Error{
 			Code:    jsonrpc2.CodeInvalidRequest,
-			Message: fmt.Sprintf("method not found %s", req.Method),
-			Data:    nil,
+			Message: fmt.Sprintf("method not supported %s", req.Method),
 		}
 	}
 
-	methodSpec := rpc.Routes[req.Method]
 	args := reflect.New(methodSpec.ArgType)
 
 	if err := json.Unmarshal(*req.Params, args.Interface()); err != nil {
@@ -69,7 +68,6 @@ func (rpc *Handler) rpcHandle(req *jsonrpc2.Request) (any, *jsonrpc2.Error) {
 		return nil, &jsonrpc2.Error{
 			Code:    jsonrpc2.CodeInvalidRequest,
 			Message: "invalid params",
-			Data:    nil,
 		}
 	}
 

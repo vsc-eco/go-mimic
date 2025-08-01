@@ -9,7 +9,7 @@ import (
 func (c *Condenser) BroadcastTransaction(
 	args *CondenserParam,
 ) (map[string]any, *jsonrpc2.Error) {
-	go c.BroadcastTransactionSynchronous(args)
+	go c.BroadcastTransactionSynchronous(args) // nolint:errcheck
 	return make(map[string]any), nil
 }
 

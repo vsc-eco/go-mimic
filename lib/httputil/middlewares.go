@@ -5,16 +5,7 @@ import (
 	"encoding/hex"
 	"log/slog"
 	"net/http"
-
-	"github.com/go-chi/httplog/v3"
 )
-
-func RequestTrace(logger *slog.Logger) func(http.Handler) http.Handler {
-	return httplog.RequestLogger(
-		logger,
-		&defaultLoggerOptions,
-	)
-}
 
 // verifies that the header `X-ADMIN-TOKEN` is present and matches the exported admin token.
 // token verification is done with `subtle.ConstantTimeCompare` to prevent timing attacks.

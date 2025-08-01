@@ -3,7 +3,6 @@ package api
 import (
 	"fmt"
 	"log/slog"
-	"mimic/lib/httputil"
 	"mimic/lib/utils"
 	apijsonrpc "mimic/modules/api/jsonrpc"
 	"mimic/modules/api/services"
@@ -15,6 +14,7 @@ import (
 
 	"github.com/chebyrash/promise"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	// ← v1 import path
 	// ← v1 JSON codec
 )
@@ -67,7 +67,7 @@ func (s *APIServer) Init() error {
 	blockApi := &services.BlockAPI{}
 	accountHistoryApi := &services.AccountHistoryApi{}
 	condenser := &condenser.Condenser{
-		// Logger:    s.rpc.logger,
+		Logger:    s.rpc.Logger,
 		BlockDB:   blockdb.Collection(),
 		AccountDB: accountdb.Collection(),
 	}
@@ -79,7 +79,7 @@ func (s *APIServer) Init() error {
 
 	// intialize router
 	s.mux = chi.NewRouter()
-	s.mux.Use(httputil.RequestTrace(slog.Default().WithGroup("mimic-trace")))
+	s.mux.Use(middleware.DefaultLogger)
 	s.mux.Get("/", s.http.root)
 	s.mux.Get("/health", s.http.health)
 	s.mux.Post("/", s.rpc.Handle)

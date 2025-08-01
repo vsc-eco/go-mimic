@@ -12,6 +12,7 @@ import (
 
 	"github.com/chebyrash/promise"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
 // At run time, AdminAPI checks for the env variable `ADMIN_TOKEN`, if
@@ -47,7 +48,7 @@ func NewAPIServer(httpPort uint16) *AdminAPI {
 
 // Runs initialization in order of how they are passed in to `Aggregate`
 func (a *AdminAPI) Init() error {
-	a.handler.logger = slog.Default().WithGroup("admin")
+	a.handler.logger = slog.Default().WithGroup("admin-api")
 
 	// load admin token
 	token, ok := os.LookupEnv("ADMIN_TOKEN")
@@ -75,7 +76,7 @@ func (a *AdminAPI) Init() error {
 	a.mux = chi.NewRouter()
 
 	requestLogger := slog.Default().WithGroup("admin-trace")
-	a.mux.Use(httputil.RequestTrace(requestLogger))
+	a.mux.Use(middleware.Logger)
 	a.mux.Use(httputil.AuthMiddleware(a.adminToken[:], requestLogger))
 
 	a.mux.Post("/user", a.handler.newUser)

@@ -53,7 +53,7 @@ func (c *Condenser) GetAccounts(
 	*reply = make([]accountdb.Account, 0)
 
 	if err := db.QueryAccountByNames(ctx, reply, nameMatched); err != nil {
-		slog.Error("Failed to query for accounts.", "err", err)
+		c.Logger.Error("Failed to query for accounts.", "err", err)
 		return
 	}
 }
@@ -67,7 +67,7 @@ func (c *Condenser) GetDynamicGlobalProperties(
 
 	headBlock := blockdb.HiveBlock{}
 	if err := c.BlockDB.QueryHeadBlock(ctx, &headBlock); err != nil {
-		slog.Error("failed to query database for head block.", "err", err)
+		c.Logger.Error("failed to query database for head block.", "err", err)
 		return nil, &jsonrpc2.Error{
 			Code:    jsonrpc2.CodeInternalError,
 			Message: "failed to query database for head block",
@@ -106,7 +106,7 @@ func (c *Condenser) GetRewardFund(args *[]string, reply *cdb.RewardFund) {
 	)
 
 	if err := mock.GetMockData(&rewards, mockApiData); err != nil {
-		slog.Error("Failed to read mock data",
+		c.Logger.Error("Failed to read mock data",
 			"mock-json", mockApiData, "err", err)
 		return
 	}
@@ -131,7 +131,7 @@ func (c *Condenser) GetWithdrawRoutes(
 	)
 
 	if err := mock.GetMockData(&routes, mockApiData); err != nil {
-		slog.Error("Failed to read mock data",
+		c.Logger.Error("Failed to read mock data",
 			"mock-json", mockApiData, "err", err)
 		return
 	}
@@ -142,7 +142,7 @@ func (c *Condenser) GetWithdrawRoutes(
 
 	allowedDirection := []string{"all", "incoming", "outgoing"}
 	if !slices.Contains(allowedDirection, transferDirection) {
-		slog.Warn(
+		c.Logger.Warn(
 			"Invalid transfer direction query, allowed values: incoming, outgoing, all",
 		)
 		return
@@ -175,7 +175,7 @@ func (c *Condenser) GetOpenOrders(args *[]string, reply *[]cdb.OpenOrder) {
 	)
 
 	if err := mock.GetMockData(&orders, mockFilePath); err != nil {
-		slog.Error("Failed to read mock data",
+		c.Logger.Error("Failed to read mock data",
 			"mock-json", mockFilePath, "err", err)
 		return
 	}
@@ -199,7 +199,7 @@ func (c *Condenser) GetConversionRequests(
 	)
 
 	if err := mock.GetMockData(&conversionRequests, mockFilePath); err != nil {
-		slog.Error("Failed to read mock data",
+		c.Logger.Error("Failed to read mock data",
 			"mock-json", mockFilePath, "err", err)
 		return
 	}
