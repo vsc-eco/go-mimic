@@ -39,8 +39,8 @@ type (
 	}
 )
 
-func BroadcastTransactions(trx *hivego.HiveTransaction) trxRequest {
-	req := trxRequest{
+func BroadcastTransactions(trx *hivego.HiveTransaction) *trxRequest {
+	req := &trxRequest{
 		comm: make(chan BroadcastTransactionResponse),
 		trx:  trx,
 	}

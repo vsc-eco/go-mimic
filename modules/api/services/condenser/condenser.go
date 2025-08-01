@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/chebyrash/promise"
+	"github.com/sourcegraph/jsonrpc2"
 )
 
 type Condenser struct {
@@ -60,46 +61,27 @@ func (c *Condenser) GetAccounts(
 // get_dynamic_global_properties
 func (c *Condenser) GetDynamicGlobalProperties(
 	_ *[]string,
-	reply *cdb.GlobalProperties,
-) {
+) (*cdb.GlobalProperties, *jsonrpc2.Error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
 	headBlock := blockdb.HiveBlock{}
 	if err := c.BlockDB.QueryHeadBlock(ctx, &headBlock); err != nil {
 		slog.Error("failed to query database for head block.", "err", err)
-		return
+		return nil, &jsonrpc2.Error{
+			Code:    jsonrpc2.CodeInternalError,
+			Message: "failed to query database for head block",
+		}
 	}
 
-	*reply = cdb.GlobalProperties{
+	reply := &cdb.GlobalProperties{
 		HeadBlockNumber: headBlock.BlockNum,
 		HeadBlockID:     headBlock.BlockID,
 		Time:            headBlock.Timestamp,
 		CurrentWitness:  headBlock.Witness,
-
-		// NOTE: fill in these fields if needed.
-		TotalPow:                     "",
-		NumPowWitnesses:              0,
-		VirtualSupply:                "",
-		CurrentSupply:                "",
-		ConfidentialSupply:           "",
-		CurrentHbdSupply:             "",
-		ConfidentialHbdSupply:        "",
-		TotalVestingFundHive:         "",
-		TotalVestingShares:           "",
-		TotalRewardFundHive:          "",
-		TotalRewardShares2:           "",
-		PendingRewardedVestingShares: "",
-		PendingRewardedVestingHive:   "",
-		HbdInterestRate:              0,
-		HbdPrintRate:                 0,
-		MaximumBlockSize:             0,
-		CurrentAslot:                 0,
-		RecentSlotsFilled:            "",
-		ParticipationCount:           0,
-		LastIrreversibleBlockNum:     0,
-		VotePowerReserveRate:         0,
 	}
+
+	return reply, nil
 }
 
 // get_current_median_history_price
@@ -253,20 +235,20 @@ func (c *Condenser) ListProposals(args *[]any, reply *[]string) {
 
 func (t *Condenser) Expose(rm services.RegisterMethod) {
 	rm("get_dynamic_global_properties", "GetDynamicGlobalProperties")
-	rm("get_current_median_history_price", "GetCurrentMedianHistoryPrice")
-	rm("get_reward_fund", "GetRewardFund")
-	rm("get_withdraw_routes", "GetWithdrawRoutes")
-	rm("get_open_orders", "GetOpenOrders")
-	rm("get_conversion_requests", "GetConversionRequests")
-	rm(
-		"get_collateralized_conversion_requests",
-		"GetCollateralizedConversionRequests",
-	)
-	rm("list_proposals", "ListProposals")
+	// rm("get_current_median_history_price", "GetCurrentMedianHistoryPrice")
+	// rm("get_reward_fund", "GetRewardFund")
+	// rm("get_withdraw_routes", "GetWithdrawRoutes")
+	// rm("get_open_orders", "GetOpenOrders")
+	// rm("get_conversion_requests", "GetConversionRequests")
+	// rm(
+	// 	"get_collateralized_conversion_requests",
+	// 	"GetCollateralizedConversionRequests",
+	// )
+	// rm("list_proposals", "ListProposals")
 	rm("broadcast_transaction", "BroadcastTransaction")
 	rm("broadcast_transaction_synchronous", "BroadcastTransactionSynchronous")
-	rm("get_accounts", "GetAccounts")
-	rm("account_create", "AccountCreate")
+	// rm("get_accounts", "GetAccounts")
+	// rm("account_create", "AccountCreate")
 }
 
 // Filters elements from `data` that matches the predicate `filterFunc`, then

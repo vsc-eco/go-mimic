@@ -2,30 +2,31 @@ package condenser
 
 import (
 	"mimic/modules/producers"
+
+	"github.com/sourcegraph/jsonrpc2"
 )
 
 func (c *Condenser) BroadcastTransaction(
 	args *CondenserParam,
-	reply *map[string]any,
-) {
-	go c.BroadcastTransactionSynchronous(
-		args,
-		&producers.BroadcastTransactionResponse{},
-	)
-	*reply = make(map[string]any)
+) (map[string]any, *jsonrpc2.Error) {
+	go c.BroadcastTransactionSynchronous(args)
+	return make(map[string]any), nil
 }
 
 func (c *Condenser) BroadcastTransactionSynchronous(
 	args *CondenserParam,
-	reply *producers.BroadcastTransactionResponse,
-) {
+) (*producers.BroadcastTransactionResponse, *jsonrpc2.Error) {
 	trx := args.Trx
 	if err := producers.ValidateTransaction(trx); err != nil {
 		c.Logger.Error("failed to validate transaction", "err", err)
-		return
+		return nil, &jsonrpc2.Error{
+			Code:    jsonrpc2.CodeInvalidParams,
+			Message: "invalid transaction",
+		}
 	}
 
 	res := producers.BroadcastTransactions(trx)
 
-	*reply = res.Response()
+	reply := res.Response()
+	return &reply, nil
 }

@@ -58,7 +58,8 @@ func TestGetDynamicGlobalProperties(t *testing.T) {
 	response := &condenserdb.GlobalProperties{}
 	headBlock := blockdb.HiveBlock{}
 
-	srv.GetDynamicGlobalProperties(&args, response)
+	response, err := srv.GetDynamicGlobalProperties(&args)
+	assert.Nil(t, err)
 
 	t.Run("it propagates the correct data.", func(t *testing.T) {
 		err := srv.BlockDB.QueryHeadBlock(context.TODO(), &headBlock)

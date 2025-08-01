@@ -20,7 +20,7 @@ const (
 var producer *Producer = nil
 
 type Producer struct {
-	trxQueue chan trxRequest
+	trxQueue chan *trxRequest
 }
 
 func New() *Producer {
@@ -30,8 +30,7 @@ func New() *Producer {
 
 // Runs initialization in order of how they are passed in to `Aggregate`
 func (p *Producer) Init() error {
-	p.trxQueue = make(chan trxRequest, 100) // bufferred
-
+	p.trxQueue = make(chan *trxRequest, 100) // bufferred
 	return nil
 }
 
@@ -84,8 +83,9 @@ func (p *Producer) produceBlocks(interval time.Duration) {
 func (p *Producer) batchTransactions() []*trxRequest {
 	requests := make([]*trxRequest, len(p.trxQueue))
 	for i := range requests {
-		*requests[i] = <-p.trxQueue
+		requests[i] = <-p.trxQueue
 	}
+
 	return requests
 }
 
