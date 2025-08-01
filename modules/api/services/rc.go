@@ -1,5 +1,7 @@
 package services
 
+import "github.com/sourcegraph/jsonrpc2"
+
 type RcApi struct {
 }
 
@@ -22,7 +24,8 @@ type RcAccount struct {
 	} `json:"rc_manabar"`
 }
 
-func (api RcApi) FindRcAccounts(args *rcArgs, reply *RcReply) {
+func (api RcApi) FindRcAccounts(args *rcArgs) (*RcReply, *jsonrpc2.Error) {
+	reply := &RcReply{}
 	for _, account := range args.Accounts {
 		reply.RcAccounts = append(reply.RcAccounts, RcAccount{
 			Account:                 account,
@@ -38,6 +41,8 @@ func (api RcApi) FindRcAccounts(args *rcArgs, reply *RcReply) {
 			},
 		})
 	}
+
+	return reply, nil
 }
 
 func (api RcApi) Expose(mr RegisterMethod) {

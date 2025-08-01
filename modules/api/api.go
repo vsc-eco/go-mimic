@@ -63,9 +63,9 @@ func (s *APIServer) RegisterService(
 func (s *APIServer) Init() error {
 	s.rpc.Logger = slog.Default().WithGroup("api")
 	// initialize jsonrpc methods
-	// rcService := &services.RcApi{}
-	// blockApi := &services.BlockAPI{}
-	// accountHistoryApi := &services.AccountHistoryApi{}
+	rcService := &services.RcApi{}
+	blockApi := &services.BlockAPI{}
+	accountHistoryApi := &services.AccountHistoryApi{}
 	condenser := &condenser.Condenser{
 		// Logger:    s.rpc.logger,
 		BlockDB:   blockdb.Collection(),
@@ -73,9 +73,9 @@ func (s *APIServer) Init() error {
 	}
 
 	s.RegisterService(condenser, "condenser_api")
-	// s.RegisterService(rcService, "rc_api")
-	// s.RegisterService(blockApi, "block_api")
-	// s.RegisterService(accountHistoryApi, "account_history_api")
+	s.RegisterService(rcService, "rc_api")
+	s.RegisterService(blockApi, "block_api")
+	s.RegisterService(accountHistoryApi, "account_history_api")
 
 	// intialize router
 	s.mux = chi.NewRouter()

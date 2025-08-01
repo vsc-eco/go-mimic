@@ -3,11 +3,10 @@ package services
 import (
 	"mimic/mock"
 
-	"golang.org/x/exp/slog"
+	"github.com/sourcegraph/jsonrpc2"
 )
 
-type AccountHistoryApi struct {
-}
+type AccountHistoryApi struct{}
 
 type GetOpsInBlockArgs struct {
 	BlockNum    uint64 `json:"block_num"`
@@ -29,13 +28,15 @@ type Operation struct {
 	Op         any    `json:"op"`
 }
 
-func (a *AccountHistoryApi) GetOpsInBlock(args *GetOpsInBlockArgs, reply *GetOpsInBlockReply) {
+func (a *AccountHistoryApi) GetOpsInBlock(
+	args *GetOpsInBlockArgs,
+) (*GetOpsInBlockReply, *jsonrpc2.Error) {
+	reply := &GetOpsInBlockReply{}
 	mockData := make(map[string][]Operation)
 
 	err := mock.GetMockData(&mockData, "account_history_api.get_ops_in_block")
 	if err != nil {
-		slog.Error("Failed to serve mock data.", "err", err)
-		return
+		panic(err)
 	}
 
 	var key string
@@ -46,6 +47,8 @@ func (a *AccountHistoryApi) GetOpsInBlock(args *GetOpsInBlockArgs, reply *GetOps
 	}
 
 	reply.Ops = mockData[key]
+
+	return reply, nil
 }
 
 func (t *AccountHistoryApi) Expose(rm RegisterMethod) {
