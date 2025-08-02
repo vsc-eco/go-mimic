@@ -14,7 +14,7 @@ type Aggregate struct {
 
 var _ Plugin = &Aggregate{}
 
-func New(plugins []Plugin) *Aggregate {
+func New(plugins ...Plugin) *Aggregate {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &Aggregate{
 		ctx,

@@ -18,3 +18,14 @@ func NewCollection(
 	defaultOpts = append(defaultOpts, opts...)
 	return db.Collection(name, defaultOpts...)
 }
+
+func MakeCollectionOpts(
+	opts ...*options.CollectionOptions,
+) []*options.CollectionOptions {
+	out := make([]*options.CollectionOptions, len(opts)+1)
+	out[0] = options.Collection().SetBSONOptions(&options.BSONOptions{
+		UseJSONStructTags: true,
+	})
+	copy(out[1:], opts)
+	return out
+}

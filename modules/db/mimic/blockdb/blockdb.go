@@ -19,26 +19,26 @@ type BlockQuery interface {
 	QueryHeadBlock(context.Context, *HiveBlock) error
 }
 
-type blockCollection struct {
+type BlockCollection struct {
 	*mongo.Collection
 }
 
 var collection BlockQuery = nil
 
-func New(d *mongo.Database) *blockCollection {
-	collection = &blockCollection{
+func New(d *mongo.Database) *BlockCollection {
+	collection = &BlockCollection{
 		db.NewCollection(d, "blocks"),
 	}
 
-	return collection.(*blockCollection)
+	return collection.(*BlockCollection)
 }
 
-func Collection() *blockCollection {
-	return collection.(*blockCollection)
+func Collection() *BlockCollection {
+	return collection.(*BlockCollection)
 }
 
 // Blocks implement `aggregate.Plugin`
-func (d *blockCollection) Init() error {
+func (d *BlockCollection) Init() error {
 	indexName, err := d.Indexes().CreateOne(context.TODO(), mongo.IndexModel{
 		Keys:    bson.D{{Key: "block_id", Value: 1}},
 		Options: options.Index().SetUnique(true).SetName("block_id_unique"),
@@ -59,7 +59,7 @@ func (d *blockCollection) Init() error {
 	return nil
 }
 
-func (d *blockCollection) Start() *promise.Promise[any] {
+func (d *BlockCollection) Start() *promise.Promise[any] {
 	var blocks []HiveBlock
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
@@ -67,30 +67,30 @@ func (d *blockCollection) Start() *promise.Promise[any] {
 	db.Seed(
 		&blocks,
 		ctx,
-		collection.(*blockCollection).Collection,
+		collection.(*BlockCollection).Collection,
 		"block_api.get_block.json",
 	)
 	return utils.PromiseResolve[any](d)
 }
 
-func (d *blockCollection) Stop() error {
+func (d *BlockCollection) Stop() error {
 	return nil
 }
 
 // Queries
 
-func (blks *blockCollection) GetBlockRange(
+func (blks *BlockCollection) GetBlockRange(
 	startHeight int64,
 	endHeight int64,
 ) []HiveBlock {
 	return nil
 }
 
-func (blks *blockCollection) GetBlockById(id string) HiveBlock {
+func (blks *BlockCollection) GetBlockById(id string) HiveBlock {
 	return HiveBlock{}
 }
 
-func (blks *blockCollection) GetBlockByHeight(height int64) (HiveBlock, error) {
+func (blks *BlockCollection) GetBlockByHeight(height int64) (HiveBlock, error) {
 	blk := HiveBlock{}
 
 	result := blks.FindOne(context.Background(), bson.M{
@@ -108,7 +108,7 @@ func (blks *blockCollection) GetBlockByHeight(height int64) (HiveBlock, error) {
 	}
 }
 
-func (blks *blockCollection) InsertBlock(blockData *HiveBlock) error {
+func (blks *BlockCollection) InsertBlock(blockData *HiveBlock) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 

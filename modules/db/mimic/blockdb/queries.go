@@ -8,7 +8,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func (b *blockCollection) QueryBlockByBlockNum(
+func (b *BlockCollection) QueryBlockByBlockNum(
 	blockBuf *HiveBlock,
 	blockNum int64,
 ) error {
@@ -25,7 +25,7 @@ func (b *blockCollection) QueryBlockByBlockNum(
 	return result.Decode(blockBuf)
 }
 
-func (b *blockCollection) QueryBlockByRange(
+func (b *BlockCollection) QueryBlockByRange(
 	blocks *[]HiveBlock,
 	start, end int,
 ) error {
@@ -44,7 +44,7 @@ func (b *blockCollection) QueryBlockByRange(
 	return cursor.All(ctx, blocks)
 }
 
-func (b *blockCollection) QueryHeadBlock(
+func (b *BlockCollection) QueryHeadBlock(
 	ctx context.Context,
 	buf *HiveBlock,
 ) error {
