@@ -7,7 +7,6 @@ import (
 	"mimic/modules/config"
 	"mimic/modules/gomimic"
 	"os"
-	"time"
 )
 
 var (
@@ -19,7 +18,7 @@ const (
 	adminServerPort uint16 = 3001
 )
 
-func init() {
+func main() {
 	cfg = config.AppConfig{
 		GoMimicPort:  mimicServerPort,
 		AdminPort:    adminServerPort,
@@ -28,15 +27,11 @@ func init() {
 		DatabaseName: utils.EnvOrPanic("MONGODB_DB_NAME"),
 		LogFilter:    config.DefaultLogLevel(),
 	}
-}
-
-func main() {
-	ctx, c := context.WithTimeout(context.Background(), 5*time.Second)
-	defer c()
 
 	app, err := gomimic.NewApp(cfg)
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Fatal(app.Run(ctx))
+
+	log.Fatal(app.Run(context.Background()))
 }

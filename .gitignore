@@ -2,6 +2,9 @@ tmp/
 *.env
 .zed
 
+# compiled binary
+go-mimic
+
 # Terraform
 .terraform/
 *.tfstate

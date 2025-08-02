@@ -35,7 +35,6 @@ func NewApp(conf config.AppConfig) (*App, error) {
 	return app, nil
 }
 
-// Runs initialization in order of how they are passed in to `Aggregate`
 func (app *App) init() error {
 	app.logger = slog.New(slog.NewTextHandler(
 		os.Stdout,
@@ -44,21 +43,27 @@ func (app *App) init() error {
 
 	fmt.Println("Initialzing app")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	// on a free instance, it could take a while to connect
+	const dbConnectTimeout = 30 * time.Second
+	ctx, cancel := context.WithTimeout(context.Background(), dbConnectTimeout)
 	defer cancel()
 
-	var err error
+	app.logger.Info("connecting to database")
 
-	app.mongoClient, err = makeMongoClient(ctx, &app.cfg)
+	var err error
+	app.mongoClient, err = makeMongoClient(ctx, app.cfg.MongodbUrl)
 	if err != nil {
 		return fmt.Errorf("failed connect to database: %v", err)
 	}
-	app.mongoDatabase = app.mongoClient.Database(app.cfg.DatabaseName)
-	app.logger.Info("connected to database", "db", app.mongoDatabase.Name())
 
+	app.mongoDatabase = app.mongoClient.Database(app.cfg.DatabaseName)
+	app.logger.Info("database connected", "db", app.mongoDatabase.Name())
+
+	app.logger.Info("initializing collection")
 	if err := initCollections(ctx, app.mongoDatabase); err != nil {
 		return fmt.Errorf("failed to initialized collections: %v", err)
 	}
+	app.logger.Info("collections initialized")
 
 	return nil
 }
@@ -76,15 +81,17 @@ func (app *App) Run(ctx context.Context) error {
 		return fmt.Errorf("failed to initialized services: %v", err)
 	}
 
-	_, err := routers.Start().Await(ctx)
-	return err
+	if _, err := routers.Start().Await(ctx); err != nil {
+		return err
+	}
+
+	<-ctx.Done()
+	return ctx.Err()
 }
 
-func makeMongoClient(
-	ctx context.Context,
-	cfg *config.AppConfig,
-) (*mongo.Client, error) {
-	mongoClientOpt := options.Client().ApplyURI(cfg.MongodbUrl)
+func makeMongoClient(ctx context.Context, uri string) (*mongo.Client, error) {
+	mongoClientOpt := options.Client().ApplyURI(uri)
+
 	cx, err := mongo.Connect(ctx, mongoClientOpt)
 	if err != nil {
 		return nil, err
@@ -98,13 +105,21 @@ func makeMongoClient(
 }
 
 func initCollections(ctx context.Context, db *mongo.Database) error {
-	_, err := aggregate.New(
+
+	agg := aggregate.New(
 		blockdb.New(db),
 		accountdb.New(db),
 		transactiondb.New(db),
-	// hiveBlocks := blockdb.New(mimicDb)
-	// stateDb := state.New(mimicDb)
-	).Start().Await(ctx)
+		// hiveBlocks := blockdb.New(mimicDb)
+		// stateDb := state.New(mimicDb)
+	)
 
+	if err := agg.Init(); err != nil {
+		if !mongo.IsDuplicateKeyError(err) {
+			return err
+		}
+	}
+
+	_, err := agg.Start().Await(ctx)
 	return err
 }

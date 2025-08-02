@@ -5,60 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
-	"mimic/lib/utils"
-	a "mimic/modules/aggregate"
 	"os"
-	"time"
 
-	"github.com/chebyrash/promise"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
-
-type Db interface {
-	Database(name string, opts ...*options.DatabaseOptions) *mongo.Database
-}
-type db struct {
-	conf   DbConfig
-	cancel context.CancelFunc
-	*mongo.Client
-}
-
-var _ a.Plugin = &db{}
-var _ Db = &db{}
-
-func New(conf DbConfig) *db {
-	return &db{conf: conf}
-}
-
-func (db *db) Init() error {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	db.cancel = cancel
-
-	uri := db.conf.Get().DbURI
-	c, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
-	if err != nil {
-		return err
-	}
-	err = c.Ping(ctx, nil)
-	if err != nil {
-		return err
-	}
-	db.Client = c
-
-	slog.Info("Connected to MongoDB.", "url", uri)
-
-	return nil
-}
-
-func (db *db) Start() *promise.Promise[any] {
-	return utils.PromiseResolve[any](db)
-}
-
-func (db *db) Stop() error {
-	db.cancel()
-	return nil
-}
 
 // some helper functions
 
@@ -100,7 +50,7 @@ func Seed[T any](
 		goto seedLogging
 	}
 
-	defer f.Close()
+	defer f.Close() // nolint:errcheck
 
 	if err := json.NewDecoder(f).Decode(buf); err != nil {
 		seedError = err
