@@ -8,7 +8,6 @@ import (
 	"mimic/lib/utils"
 	"mimic/modules/db/mimic/accountdb"
 	"net/http"
-	"os"
 
 	"github.com/chebyrash/promise"
 	"github.com/go-chi/chi/v5"
@@ -23,13 +22,13 @@ import (
 //
 // AdminAPI implements aggregate.Plugins
 type AdminAPI struct {
-	adminToken [64]byte
+	adminToken string
 
 	// if the env token is not set, this is nil
 	mux      *chi.Mux
 	httpAddr string
 
-	handler serverHandler
+	handler *serverHandler
 }
 
 type serverHandler struct {
@@ -37,11 +36,13 @@ type serverHandler struct {
 	db     accountdb.AccountQuery
 }
 
-func NewAPIServer(httpPort uint16) *AdminAPI {
-	srv := new(AdminAPI)
-
-	srv.mux = nil
-	srv.httpAddr = fmt.Sprintf("0.0.0.0:%d", httpPort)
+func NewAPIServer(httpPort uint16, token string) *AdminAPI {
+	srv := &AdminAPI{
+		adminToken: token,
+		mux:        nil,
+		httpAddr:   fmt.Sprintf("0.0.0.0:%d", httpPort),
+		handler:    nil,
+	}
 
 	return srv
 }
@@ -51,22 +52,16 @@ func (a *AdminAPI) Init() error {
 	a.handler.logger = slog.Default().WithGroup("admin-api")
 
 	// load admin token
-	token, ok := os.LookupEnv("ADMIN_TOKEN")
-	if !ok {
+	adminDisabled := len(a.adminToken) == 0
+	if adminDisabled {
 		a.handler.logger.Info("admin server disabled.")
 		a.mux = nil
 		return nil
 	}
 
-	if len(token) != len(a.adminToken)*2 {
-		return fmt.Errorf(
-			"invalid admin token format, expected hex encoding of 64 bytes",
-		)
-	}
-
-	n, err := hex.Decode(a.adminToken[:], []byte(token))
-	if err != nil || n != len(a.adminToken) {
-		return fmt.Errorf("invalid admin token")
+	adminToken, err := hex.DecodeString(a.adminToken)
+	if err != nil {
+		return fmt.Errorf("invalid admin token hex: %v", err)
 	}
 
 	// db
@@ -77,7 +72,7 @@ func (a *AdminAPI) Init() error {
 
 	requestLogger := slog.Default().WithGroup("admin-trace")
 	a.mux.Use(middleware.Logger)
-	a.mux.Use(httputil.AuthMiddleware(a.adminToken[:], requestLogger))
+	a.mux.Use(httputil.AuthMiddleware(adminToken, requestLogger))
 
 	a.mux.Post("/user", a.handler.newUser)
 	a.mux.Put("/user", a.handler.updateUser)
