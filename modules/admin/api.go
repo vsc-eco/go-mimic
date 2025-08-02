@@ -3,6 +3,7 @@ package admin
 import (
 	"encoding/hex"
 	"fmt"
+	"log"
 	"log/slog"
 	"mimic/lib/httputil"
 	"mimic/lib/utils"
@@ -49,12 +50,13 @@ func NewAPIServer(httpPort uint16, token string) *AdminAPI {
 
 // Runs initialization in order of how they are passed in to `Aggregate`
 func (a *AdminAPI) Init() error {
-	a.handler.logger = slog.Default().WithGroup("admin-api")
+	logger := slog.Default().WithGroup("admin-api")
 
 	// load admin token
 	adminDisabled := len(a.adminToken) == 0
 	if adminDisabled {
-		a.handler.logger.Info("admin server disabled.")
+		logger.Info("admin server disabled.")
+		a.handler = nil
 		a.mux = nil
 		return nil
 	}
@@ -65,7 +67,10 @@ func (a *AdminAPI) Init() error {
 	}
 
 	// db
-	a.handler.db = accountdb.Collection()
+	a.handler = &serverHandler{
+		logger: logger,
+		db:     accountdb.Collection(),
+	}
 
 	// initialize mux
 	a.mux = chi.NewRouter()
@@ -88,12 +93,9 @@ func (a *AdminAPI) Start() *promise.Promise[any] {
 	}
 
 	a.handler.logger.Info("starting admin API server.", "addr", a.httpAddr)
-	go func(mux *chi.Mux) {
-		err := http.ListenAndServe(a.httpAddr, mux)
-		if err != nil {
-			a.handler.logger.Error("failed to start server.", "err", err)
-		}
-	}(a.mux)
+	go func(addr string, mux *chi.Mux) {
+		log.Fatal(http.ListenAndServe(addr, mux))
+	}(a.httpAddr, a.mux)
 
 	return utils.PromiseResolve[any](nil)
 }

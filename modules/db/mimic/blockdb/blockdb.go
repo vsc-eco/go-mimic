@@ -45,13 +45,6 @@ func (d *BlockCollection) Init() error {
 	})
 
 	if err != nil {
-		slog.Error(
-			"Failed to create index.",
-			"collection",
-			d.Name(),
-			"err",
-			err,
-		)
 		return err
 	}
 

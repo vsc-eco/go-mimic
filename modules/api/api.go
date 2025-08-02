@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"log"
 	"log/slog"
 	"mimic/lib/utils"
 	apijsonrpc "mimic/modules/api/jsonrpc"
@@ -88,9 +89,9 @@ func (s *APIServer) Init() error {
 }
 
 func (s *APIServer) Start() *promise.Promise[any] {
-	s.rpc.Logger.Info("APIServer accepting requests.", "addr", s.addr)
+	s.rpc.Logger.Info("starting go-mimic API server.", "addr", s.addr)
 	go func(addr string, mux *chi.Mux) {
-		http.ListenAndServe(addr, mux)
+		log.Fatal(http.ListenAndServe(addr, mux))
 	}(s.addr, s.mux)
 
 	return utils.PromiseResolve[any](nil)

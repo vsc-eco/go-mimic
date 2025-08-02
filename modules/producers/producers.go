@@ -12,7 +12,6 @@ import (
 )
 
 const (
-	blockProducer       = "go-mimic-producer"
 	blockIdLen          = 16
 	merkleRootBlockSize = 32
 )
@@ -21,6 +20,7 @@ var producer *Producer = nil
 
 type Producer struct {
 	trxQueue chan *trxRequest
+	logger   *slog.Logger
 }
 
 func New() *Producer {
@@ -31,6 +31,7 @@ func New() *Producer {
 // Runs initialization in order of how they are passed in to `Aggregate`
 func (p *Producer) Init() error {
 	p.trxQueue = make(chan *trxRequest, 100) // bufferred
+	p.logger = slog.Default().WithGroup("producer")
 	return nil
 }
 
@@ -46,7 +47,7 @@ func (p *Producer) Stop() error {
 }
 
 func (p *Producer) produceBlocks(interval time.Duration) {
-	slog.Debug("Producing blocks.", "interval", interval)
+	p.logger.Info("starting block producer.", "interval", interval)
 
 	// get latest block
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
@@ -77,6 +78,10 @@ func (p *Producer) produceBlocks(interval time.Duration) {
 		}
 
 		latestBlock = lastBlock
+		p.logger.Info(
+			"block produced.",
+			"num", latestBlock.BlockNum,
+			"id", latestBlock.BlockID)
 	}
 }
 
