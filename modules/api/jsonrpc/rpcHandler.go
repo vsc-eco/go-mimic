@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/sourcegraph/jsonrpc2"
 )
@@ -18,6 +19,8 @@ type Handler struct {
 }
 
 func (rpc *Handler) Handle(w http.ResponseWriter, r *http.Request) {
+	requestTs := time.Now()
+
 	req := &jsonrpc2.Request{}
 	if err := json.NewDecoder(r.Body).Decode(req); err != nil {
 		rpc.Logger.Error("failed to decode incoming requests.", "err", err)
@@ -26,6 +29,24 @@ func (rpc *Handler) Handle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := jsonrpc2.Response{ID: req.ID}
+	defer func(response *jsonrpc2.Response) { // log out rpc request
+		duration := time.Since(requestTs)
+		if response.Error != nil {
+			rpc.Logger.Error(
+				"rpc request failed",
+				"method", req.Method,
+				"duration", duration,
+				"err-code", response.Error.Code,
+				"err-msg", response.Error.Message,
+			)
+		} else {
+			rpc.Logger.Info(
+				"rpc request served",
+				"method", req.Method,
+				"duration", duration,
+			)
+		}
+	}(&response)
 
 	result, err := rpc.rpcHandle(req)
 	if err != nil {
