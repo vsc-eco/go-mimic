@@ -38,11 +38,17 @@ func (s *APIServer) RegisterMethod(
 		panic(fmt.Sprintf("method not found: %s", methodName))
 	}
 
-	slog.Debug("Method registered.",
-		"methodName", methodName,
-		"methodNum", servType.NumMethod())
-
 	mtype := method.Type
+
+	if err := validateMethod(mtype); err != nil {
+		msg := fmt.Sprintf(
+			`invalid method function signature %s.%s:
+expected: func(*self, any) (any, *jsonrpc2.Error)
+error: %v`,
+			reflect.TypeOf(servc), methodName, err,
+		)
+		panic(msg)
+	}
 
 	return apijsonrpc.ServiceMethod{
 		Method:  method,
@@ -50,7 +56,24 @@ func (s *APIServer) RegisterMethod(
 	}
 }
 
-func (s *APIServer) RegisterService(
+func validateMethod(m reflect.Type) error {
+	if m.NumIn() != 2 {
+		return errors.New("invalid argument count")
+	}
+
+	if m.NumOut() != 2 {
+		return errors.New("invalid return value count")
+	}
+
+	errOut := m.Out(1).Elem()
+	if errOut.String() != "jsonrpc2.Error" {
+		return errors.New("invalid error type")
+	}
+
+	return nil
+}
+
+func (s *GoMimicAPI) RegisterService(
 	service services.ServiceHandler,
 	name string,
 ) {
