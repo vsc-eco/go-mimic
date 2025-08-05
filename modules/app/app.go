@@ -1,4 +1,4 @@
-package gomimic
+package app
 
 import (
 	"context"
@@ -41,8 +41,6 @@ func (app *App) init() error {
 		&slog.HandlerOptions{Level: app.cfg.LogFilter},
 	))
 
-	fmt.Println("Initialzing app")
-
 	// on a free instance, it could take a while to connect
 	const dbConnectTimeout = 30 * time.Second
 	ctx, cancel := context.WithTimeout(context.Background(), dbConnectTimeout)
@@ -72,8 +70,8 @@ func (app *App) Run(ctx context.Context) error {
 	app.logger.Info("Starting app")
 
 	routers := aggregate.New(
-		api.NewAPIServer(app.cfg.GoMimicPort),
-		admin.NewAPIServer(app.cfg.AdminPort, app.cfg.AdminToken),
+		api.NewGoMimicAPI(app.cfg.GoMimic.Port),
+		admin.NewAPIServer(app.cfg.Admin.Port, app.cfg.Admin.Token),
 		producers.New(),
 	)
 
@@ -105,7 +103,6 @@ func makeMongoClient(ctx context.Context, uri string) (*mongo.Client, error) {
 }
 
 func initCollections(ctx context.Context, db *mongo.Database) error {
-
 	agg := aggregate.New(
 		blockdb.New(db),
 		accountdb.New(db),
