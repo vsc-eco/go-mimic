@@ -104,9 +104,12 @@ func (s *GoMimicAPI) Init() error {
 
 	// intialize router
 	s.mux = chi.NewRouter()
-	s.mux.Use(middleware.DefaultLogger)
-	s.mux.Get("/", s.http.root)
-	s.mux.Get("/health", s.http.health)
+	s.mux.Route("/", func(r chi.Router) {
+		r.Use(middleware.DefaultLogger)
+		r.Get("/", s.http.root)
+		r.Get("/health", s.http.health)
+	})
+
 	s.mux.Post("/", s.rpc.Handle)
 
 	return nil
