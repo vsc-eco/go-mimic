@@ -2,7 +2,6 @@ package apijsonrpc
 
 import (
 	"encoding/json"
-	"fmt"
 	"log/slog"
 	jsonrpcutils "mimic/lib/utils/jsonrpc"
 	"net/http"

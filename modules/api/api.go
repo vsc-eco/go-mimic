@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"log/slog"
@@ -20,14 +21,14 @@ import (
 	// ← v1 JSON codec
 )
 
-type APIServer struct {
+type GoMimicAPI struct {
 	mux  *chi.Mux
 	addr string
 	rpc  apijsonrpc.Handler
 	http httpHandler
 }
 
-func (s *APIServer) RegisterMethod(
+func (s *GoMimicAPI) RegisterMethod(
 	alias, methodName string,
 	servc any,
 ) apijsonrpc.ServiceMethod {
@@ -84,14 +85,14 @@ func (s *GoMimicAPI) RegisterService(
 	})
 }
 
-func (s *APIServer) Init() error {
-	s.rpc.Logger = slog.Default().WithGroup("api")
+func (s *GoMimicAPI) Init() error {
+	s.rpc.Logger = slog.Default().WithGroup("gomimic")
 	// initialize jsonrpc methods
 	rcService := &services.RcApi{}
 	blockApi := &services.BlockAPI{}
 	accountHistoryApi := &services.AccountHistoryApi{}
 	condenser := &condenser.Condenser{
-		Logger:    s.rpc.Logger,
+		Logger:    s.rpc.Logger.WithGroup("condenser_api"),
 		BlockDB:   blockdb.Collection(),
 		AccountDB: accountdb.Collection(),
 	}
@@ -111,7 +112,7 @@ func (s *APIServer) Init() error {
 	return nil
 }
 
-func (s *APIServer) Start() *promise.Promise[any] {
+func (s *GoMimicAPI) Start() *promise.Promise[any] {
 	s.rpc.Logger.Info("starting go-mimic API server.", "addr", s.addr)
 	go func(addr string, mux *chi.Mux) {
 		log.Fatal(http.ListenAndServe(addr, mux))
@@ -120,20 +121,20 @@ func (s *APIServer) Start() *promise.Promise[any] {
 	return utils.PromiseResolve[any](nil)
 }
 
-func (a *APIServer) Stop() error {
+func (a *GoMimicAPI) Stop() error {
 	return nil
 }
 
-func NewAPIServer(httpPort uint16) *APIServer {
-	return &APIServer{
+func NewGoMimicAPI(httpPort uint16) *GoMimicAPI {
+	return &GoMimicAPI{
 		addr: fmt.Sprintf("0.0.0.0:%d", httpPort),
 		rpc: apijsonrpc.Handler{
 			Routes:   make(map[string]*apijsonrpc.ServiceMethod),
 			Services: make(map[string]reflect.Value),
-			Logger:   slog.Default().WithGroup("api-rpc"),
+			Logger:   slog.Default().WithGroup("gomimic-jsonrpc"),
 		},
 		http: httpHandler{
-			logger: slog.Default().WithGroup("api-http"),
+			logger: slog.Default().WithGroup("gomimic-http"),
 		},
 	}
 }
