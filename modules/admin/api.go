@@ -50,7 +50,7 @@ func NewAPIServer(httpPort uint16, token string) *AdminAPI {
 
 // Runs initialization in order of how they are passed in to `Aggregate`
 func (a *AdminAPI) Init() error {
-	logger := slog.Default().WithGroup("admin-api")
+	logger := slog.Default().WithGroup("admin")
 
 	// load admin token
 	adminDisabled := len(a.adminToken) == 0

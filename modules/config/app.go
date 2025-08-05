@@ -1,20 +1,27 @@
 package config
 
 import (
-	"context"
 	"log"
 	"log/slog"
 	"mimic/lib/utils"
 )
 
 type AppConfig struct {
-	GoMimicPort  uint16
-	AdminPort    uint16
-	AdminToken   string
+	GoMimic GoMimicConfig
+	Admin   AdminConfig
+
 	LogFilter    slog.Level
 	MongodbUrl   string
 	DatabaseName string
-	Ctx          context.Context
+}
+
+type GoMimicConfig struct {
+	Port uint16
+}
+
+type AdminConfig struct {
+	Port  uint16
+	Token string
 }
 
 func DefaultLogLevel() slog.Level {

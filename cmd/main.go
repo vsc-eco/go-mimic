@@ -4,14 +4,12 @@ import (
 	"context"
 	"log"
 	"mimic/lib/utils"
+	gomimic "mimic/modules/app"
 	"mimic/modules/config"
-	"mimic/modules/gomimic"
 	"os"
 )
 
-var (
-	cfg = config.AppConfig{}
-)
+var cfg = config.AppConfig{}
 
 const (
 	mimicServerPort uint16 = 3000
@@ -20,9 +18,15 @@ const (
 
 func main() {
 	cfg = config.AppConfig{
-		GoMimicPort:  mimicServerPort,
-		AdminPort:    adminServerPort,
-		AdminToken:   os.Getenv("ADMIN_TOKEN"),
+		GoMimic: config.GoMimicConfig{
+			Port: mimicServerPort,
+		},
+
+		Admin: config.AdminConfig{
+			Port:  adminServerPort,
+			Token: os.Getenv("ADMIN_TOKEN"),
+		},
+
 		MongodbUrl:   utils.EnvOrPanic("MONGODB_URL"),
 		DatabaseName: utils.EnvOrPanic("MONGODB_DB_NAME"),
 		LogFilter:    config.DefaultLogLevel(),
