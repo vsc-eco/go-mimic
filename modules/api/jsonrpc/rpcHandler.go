@@ -69,15 +69,8 @@ func (rpc *Handler) rpcHandle(req *jsonrpc2.Request) (any, *jsonrpc2.Error) {
 		args,
 	})
 
-	if len(jsonrpcResponse) != 2 {
-		msg := fmt.Sprintf(
-			`invalid return type for method handler %s
-	expected return type: (any, *jsonrpc2.Error)
-	got: %v`,
-			req.Method, jsonrpcResponse,
-		)
-		panic(msg)
-	}
+	// NOTE: no need to validate return type, when the method is registered, the function
+	// signatures and return type are already validated
 
 	var (
 		out = jsonrpcResponse[0].Interface()
