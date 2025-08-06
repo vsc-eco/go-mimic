@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/chebyrash/promise"
+	"github.com/vsc-eco/hivego"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -33,6 +34,23 @@ func New(d *mongo.Database) *BlockCollection {
 	return collection.(*BlockCollection)
 }
 
+func (b *BlockCollection) SeedBlock(blk *HiveBlock) error {
+	*blk = HiveBlock{
+		BlockID:          "0000000000000000000000000000000000000000",
+		Previous:         "0000000000000000000000000000000000000000",
+		Timestamp:        time.Now().Format(utils.TimeFormat),
+		Witness:          "",
+		MerkleRoot:       "0000000000000000000000000000000000000000",
+		Extensions:       []any{},
+		WitnessSignature: "",
+		Transactions:     []hivego.HiveTransaction{},
+		SigningKey:       "",
+		TransactionIDs:   []string{},
+	}
+
+	return b.InsertBlock(blk)
+}
+
 func Collection() *BlockCollection {
 	return collection.(*BlockCollection)
 }
@@ -53,16 +71,6 @@ func (d *BlockCollection) Init() error {
 }
 
 func (d *BlockCollection) Start() *promise.Promise[any] {
-	var blocks []HiveBlock
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer cancel()
-
-	db.Seed(
-		&blocks,
-		ctx,
-		collection.(*BlockCollection).Collection,
-		"block_api.get_block.json",
-	)
 	return utils.PromiseResolve[any](d)
 }
 
