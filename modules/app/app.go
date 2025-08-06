@@ -27,6 +27,8 @@ type App struct {
 	mongoDatabase *mongo.Database
 }
 
+func (a *App) Database() *mongo.Database { return a.mongoDatabase }
+
 func NewApp(conf config.AppConfig) (*App, error) {
 	app := &App{cfg: conf}
 	if err := app.init(); err != nil {
