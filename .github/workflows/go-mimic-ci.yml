@@ -3,8 +3,26 @@ on:
   push:
   pull_request:
     branches: [main]
+env:
+  ADMIN_TOKEN: ${{ vars.ADMIN_TOKEN }}
+  LOG_LEVEL: ${{ vars.LOG_LEVEL }}
+  TEST_USERNAME: ${{ vars.TEST_USERNAME }}
+  TEST_PASSWORD: ${{ vars.TEST_PASSWORD }}
+  TEST_OWNER_KEY_PRIVATE: ${{ vars.TEST_OWNER_KEY_PRIVATE }}
+  TEST_OWNER_KEY_PUBLIC: ${{ vars.TEST_OWNER_KEY_PUBLIC }}
+  TEST_ACTIVE_KEY_PRIVATE: ${{ vars.TEST_ACTIVE_KEY_PRIVATE }}
+  TEST_ACTIVE_KEY_PUBLIC: ${{ vars.TEST_ACTIVE_KEY_PUBLIC }}
+  TEST_POSTING_KEY_PRIVATE: ${{ vars.TEST_POSTING_KEY_PRIVATE }}
+  TEST_POSTING_KEY_PUBLIC: ${{ vars.TEST_POSTING_KEY_PUBLIC }}
+  TF_VAR_mongoatlas_org_id: ${{ vars.TF_VAR_mongoatlas_org_id }}
+  MONGODB_ATLAS_PUBLIC_API_KEY: ${{ vars.MONGODB_ATLAS_PUBLIC_API_KEY }}
+  MONGODB_ATLAS_PRIVATE_API_KEY: ${{ vars.MONGODB_ATLAS_PRIVATE_API_KEY }}
+  MONGODB_URL: ${{ vars.MONGODB_URL }}
+  MONGODB_DB_NAME: ${{ vars.MONGODB_DB_NAME }}
+  
 jobs:
   ci:
+    environment: test
     runs-on: ubuntu-latest
     strategy:
       matrix:
