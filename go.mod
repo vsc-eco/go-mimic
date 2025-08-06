@@ -3,14 +3,12 @@ module mimic
 go 1.24.2
 
 require (
-	github.com/JustinKnueppel/go-result v1.0.0
 	github.com/btcsuite/btcd/btcutil v1.1.6
 	github.com/chebyrash/promise v0.0.0-20230709133807-42ec49ba1459
 	github.com/decred/dcrd/dcrec/secp256k1/v2 v2.0.0
 	github.com/go-chi/chi/v5 v5.2.2
-	github.com/go-chi/httplog/v3 v3.2.2
 	github.com/go-playground/validator/v10 v10.27.0
-	github.com/joho/godotenv v1.5.1
+	github.com/sourcegraph/jsonrpc2 v0.2.1
 	github.com/stretchr/testify v1.10.0
 	github.com/vsc-eco/hivego v0.0.0-20250326022052-753ab49b6067
 	go.mongodb.org/mongo-driver v1.17.3
@@ -33,7 +31,6 @@ require (
 	github.com/panjf2000/ants/v2 v2.8.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect
-	github.com/sourcegraph/jsonrpc2 v0.2.1 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasthttp v1.35.0 // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
