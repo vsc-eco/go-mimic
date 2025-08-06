@@ -2,6 +2,7 @@ package producers
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"mimic/lib/utils"
 	"mimic/modules/db/mimic/blockdb"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/chebyrash/promise"
 	"github.com/vsc-eco/hivego"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 const (
@@ -32,7 +34,20 @@ func New() *Producer {
 func (p *Producer) Init() error {
 	p.trxQueue = make(chan *trxRequest, 100) // bufferred
 	p.logger = slog.Default().WithGroup("producer")
-	return nil
+
+	// seed the head block
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+
+	db := blockdb.Collection()
+	tmp := new(blockdb.HiveBlock)
+
+	err := db.QueryHeadBlock(ctx, tmp)
+	if err != nil && errors.Is(err, mongo.ErrNoDocuments) {
+		err = db.SeedBlock(tmp)
+	}
+
+	return err
 }
 
 // Runs startup and should be non blocking
