@@ -115,7 +115,13 @@ func executeMethod(jsonrpcMethods []string) ([]byte, error) {
 		return nil, err
 	}
 
-	return httpClient.broadcastSync(trx, testUserKey)
+	sig, err := trx.Sign(*testUserKey)
+	if err != nil {
+		return nil, err
+	}
+	trx.AddSig(sig)
+
+	return httpClient.broadcastSync(trx)
 }
 
 type jsonrpcRequest struct {

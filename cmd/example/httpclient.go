@@ -26,14 +26,7 @@ type broadcastTransactionRequest struct {
 
 func (a *apiClient) broadcastSync(
 	trx *hivego.HiveTransaction,
-	keyPair *hivego.KeyPair,
 ) ([]byte, error) {
-	sig, err := trx.Sign(*keyPair)
-	if err != nil {
-		return nil, err
-	}
-	trx.AddSig(sig)
-
 	a.buf.Reset()
 	defer a.buf.Reset()
 
