@@ -9,6 +9,7 @@ import (
 	"slices"
 	"time"
 
+	"github.com/decred/dcrd/dcrec/secp256k1/v2"
 	"github.com/vsc-eco/hivego"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -27,10 +28,8 @@ func (b *producerBlock) next() producerBlock {
 
 func (b *producerBlock) sign(
 	transactions []*hivego.HiveTransaction,
-	witness Witness,
+	witness *Witness,
 ) error {
-	b.Timestamp = time.Now().Format(utils.TimeFormat)
-
 	// get block number
 	blockCtrBuf, err := hex.DecodeString(b.Previous[:8])
 	if err != nil {
@@ -72,37 +71,58 @@ func (b *producerBlock) sign(
 	bufHash := checksum(buf)
 	copy(blockDigest[len(blockCtrBuf):], bufHash[:16])
 
+	// sign block
+	sig, err := secp256k1.SignCompact(
+		witness.keyPair.PrivateKey,
+		blockDigest,
+		true,
+	)
+	if err != nil {
+		return err
+	}
+
 	// write to new block
-	b.BlockID = hex.EncodeToString(blockDigest)
-	b.Witness = witness.name
-	b.Transactions = utils.Map(
+	blockTrxs := utils.Map(
 		transactions,
 		func(trx *hivego.HiveTransaction) hivego.HiveTransaction { return *trx },
 	)
-	b.MerkleRoot = hex.EncodeToString(merkleRoot)
 
 	// transaction IDs
-	b.TransactionIDs, err = utils.TryMap(
+	trxIds, err := utils.TryMap(
 		transactions,
 		func(trx *hivego.HiveTransaction) (string, error) {
 			return trx.GenerateTrxId()
 		},
 	)
+	block := blockdb.HiveBlock{
+		ObjectID:         primitive.NilObjectID,
+		BlockNum:         b.BlockNum,
+		BlockID:          hex.EncodeToString(blockDigest),
+		Previous:         b.Previous,
+		Timestamp:        time.Now().Format(utils.TimeFormat),
+		Witness:          witness.name,
+		MerkleRoot:       hex.EncodeToString(merkleRoot),
+		Extensions:       []any{},
+		WitnessSignature: hex.EncodeToString(sig),
+		Transactions:     blockTrxs,
+		TransactionIDs:   trxIds,
+		SigningKey:       *witness.keyPair.GetPublicKeyString(),
+	}
+
+	*b.HiveBlock = block
 
 	return err
 }
 
-func generateMerkleRoot(
-	transactions []*hivego.HiveTransaction,
-) ([]byte, error) {
+func generateMerkleRoot(trxs []*hivego.HiveTransaction) ([]byte, error) {
 	// empty merkle tree
-	if len(transactions) == 0 {
+	if len(trxs) == 0 {
 		return make([]byte, merkleRootBlockSize), nil
 	}
 
 	// merkle tree with 1 transaction, just hash the transaction.
-	if len(transactions) == 1 {
-		bytes, err := encode(transactions[0])
+	if len(trxs) == 1 {
+		bytes, err := encode(trxs[0])
 		if err != nil {
 			return nil, err
 		}
@@ -112,19 +132,9 @@ func generateMerkleRoot(
 	}
 
 	// with 2+ transactions
-	digests := make(
-		[][merkleRootBlockSize]byte,
-		len(transactions),
-		len(transactions)+1,
-	)
-
-	for i, transaction := range transactions {
-		bytes, err := encode(transaction)
-		if err != nil {
-			return nil, err
-		}
-
-		digests[i] = checksum(bytes)
+	digests, err := utils.TryMap(trxs, trxCheckSum)
+	if err != nil {
+		return nil, err
 	}
 
 	// incase the length of transactions is odd, duplicate the last transaction
@@ -146,6 +156,16 @@ func generateMerkleRoot(
 	}
 
 	return digests[0][:], nil
+}
+
+func trxCheckSum(
+	trx *hivego.HiveTransaction,
+) ([merkleRootBlockSize]byte, error) {
+	bytes, err := encode(trx)
+	if err != nil {
+		return [merkleRootBlockSize]byte{}, err
+	}
+	return checksum(bytes), nil
 }
 
 func (p *producerBlock) getBlockNum() (uint32, error) {
