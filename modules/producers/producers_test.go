@@ -2,9 +2,8 @@ package producers
 
 import (
 	"encoding/hex"
-	"encoding/json"
+	"mimic/lib/utils"
 	"mimic/modules/db/mimic/blockdb"
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -16,29 +15,31 @@ const hiveBlockIDLen = 40
 var testTransactions = []*hivego.HiveTransaction{}
 
 func TestMakeBlock(t *testing.T) {
-	var buf []blockdb.HiveBlock
+	buf := blockdb.HiveBlock{
+		BlockID:      "0000000000000000000000000000000000000000",
+		Previous:     "0000000000000000000000000000000000000000",
+		Transactions: []hivego.HiveTransaction{},
+	}
 
-	f, err := os.Open("../../mock/block_api.get_block.json")
+	witness, err := newWitness(
+		utils.EnvOrPanic("TEST_USERNAME"),
+		utils.EnvOrPanic("TEST_OWNER_KEY_PRIVATE"),
+	)
 	if err != nil {
-		panic(err)
+		t.Fatal(err)
 	}
-
-	if err := json.NewDecoder(f).Decode(&buf); err != nil {
-		panic(err)
-	}
-
-	witness := Witness{name: "go-mimic-test"}
 
 	// test for empty merkle tree generation
-	firstBlock := producerBlock{&buf[0]}
-	err = firstBlock.sign([]*hivego.HiveTransaction{}, witness)
-	assert.Nil(t, err)
+	firstBlock := producerBlock{&buf}
+	assert.NoError(t, firstBlock.sign([]*hivego.HiveTransaction{}, witness))
 	assert.Equal(
 		t,
 		hex.EncodeToString(make([]byte, merkleRootBlockSize)),
 		firstBlock.MerkleRoot,
 		"It should contain an emtpy merkle root with no transactions.",
 	)
+	t.Log(firstBlock.Witness)
+	t.Log(firstBlock.WitnessSignature)
 
 	// test for second block derivation
 	trx := make([]*hivego.HiveTransaction, len(testTransactions))

@@ -109,9 +109,10 @@ func (p *Producer) batchTransactions() []*trxRequest {
 	return requests
 }
 
-var stubWitness = Witness{
-	name: "hive-io-witness",
-}
+var stubWitness, _ = newWitness(
+	utils.EnvOrPanic("TEST_USERNAME"),
+	utils.EnvOrPanic("TEST_OWNER_KEY_PRIVATE"),
+)
 
 func (p *Producer) makeBlock(
 	broadcastedTrx []*trxRequest,
@@ -156,5 +157,14 @@ func (p *Producer) makeBlock(
 }
 
 type Witness struct {
-	name string
+	name    string
+	keyPair *hivego.KeyPair
+}
+
+func newWitness(name, privateKeyWif string) (*Witness, error) {
+	keyPair, err := hivego.KeyPairFromWif(privateKeyWif)
+	if err != nil {
+		return nil, err
+	}
+	return &Witness{name, keyPair}, err
 }
