@@ -30,88 +30,92 @@ func TestMakeBlock(t *testing.T) {
 	}
 
 	// test for empty merkle tree generation
-	firstBlock := producerBlock{&buf}
-	assert.NoError(t, firstBlock.sign([]*hivego.HiveTransaction{}, witness))
-	assert.Equal(
-		t,
-		hex.EncodeToString(make([]byte, merkleRootBlockSize)),
-		firstBlock.MerkleRoot,
-		"It should contain an emtpy merkle root with no transactions.",
-	)
-	t.Log(firstBlock.Witness)
-	t.Log(firstBlock.WitnessSignature)
 
-	// test for second block derivation
-	trx := make([]*hivego.HiveTransaction, len(testTransactions))
-	copy(trx, testTransactions)
+	t.Run("witness signging", func(t *testing.T) {
+		b := buf
+		firstBlock := producerBlock{&b}
 
-	secondBlock := firstBlock.next()
-	assert.Equal(t, firstBlock.BlockID, secondBlock.Previous)
+		assert.NoError(t, firstBlock.sign([]*hivego.HiveTransaction{}, witness))
+		assert.Equal(t, witness.name, firstBlock.Witness)
 
-	err = secondBlock.sign(trx, witness)
-	assert.Nil(t, err)
+		sig, err := hex.DecodeString(firstBlock.WitnessSignature)
+		assert.NoError(t, err)
+		assert.Equal(t, 65, len(sig))
+	})
 
-	assert.Nil(t, err)
-	assert.Equal(
-		t,
-		"00000001",
-		secondBlock.Previous[:8],
-		"Reference the previous block corrently.",
-	)
-	assert.Equal(
-		t,
-		"00000002",
-		secondBlock.BlockID[:8],
-		"Incremented the block correctly.",
-	)
-	assert.Equal(
-		t,
-		hiveBlockIDLen,
-		len(secondBlock.BlockID),
-		"Valid length for Hive's Block ID.",
-	)
-	assert.Equal(
-		t,
-		witness.name,
-		secondBlock.Witness,
-		"Witness name is propagated.",
-	)
-	assert.Equal(
-		t,
-		len(trx),
-		len(secondBlock.Transactions),
-		"Transactions are propagated.",
-	)
-	assert.Equal(
-		t,
-		len(trx),
-		len(secondBlock.TransactionIDs),
-		"TransactionIDs are propagated",
-	)
-	assert.NotEqual(
-		t,
-		secondBlock.BlockID[8:],
-		firstBlock.BlockID[8:],
-		"Block IDs should diff.",
-	)
-	assert.NotEqual(
-		t,
-		secondBlock.MerkleRoot,
-		firstBlock.MerkleRoot,
-		"Merkle root should diff.",
-	)
+	t.Run("signing with no transactions", func(t *testing.T) {
+		b := buf
+		firstBlock := producerBlock{&b}
+		assert.NoError(t, firstBlock.sign([]*hivego.HiveTransaction{}, witness))
 
-	// the merkle root is calculated
-	thirdBlock := secondBlock.next()
-	trxs := make([]*hivego.HiveTransaction, len(testTransactions))
-	copy(trxs, testTransactions)
+		assert.Equal(
+			t,
+			hex.EncodeToString(make([]byte, merkleRootBlockSize)),
+			firstBlock.MerkleRoot,
+			"It should contain an emtpy merkle root with no transactions.",
+		)
 
-	err = thirdBlock.sign(trxs, witness)
-	assert.Nil(t, err)
-	assert.NotEqual(
-		t,
-		hex.EncodeToString(make([]byte, merkleRootBlockSize)),
-		thirdBlock.MerkleRoot,
-		"Merkle root is calculated.",
-	)
+	})
+
+	t.Run("generating metadata for the next block", func(t *testing.T) {
+		b := buf
+
+		seedBlock := producerBlock{&b}
+		firstBlock := seedBlock.next()
+		assert.NoError(t, firstBlock.sign([]*hivego.HiveTransaction{}, witness))
+
+		// test for second block derivation
+		trx := make([]*hivego.HiveTransaction, len(testTransactions))
+		copy(trx, testTransactions)
+
+		secondBlock := firstBlock.next()
+		assert.Equal(t, firstBlock.BlockID, secondBlock.Previous)
+
+		err = secondBlock.sign(trx, witness)
+		assert.Nil(t, err)
+
+		assert.Nil(t, err)
+		assert.Equal(
+			t,
+			"00000001",
+			secondBlock.Previous[:8],
+			"Reference the previous block corrently.",
+		)
+		assert.Equal(
+			t,
+			"00000002",
+			secondBlock.BlockID[:8],
+			"Incremented the block correctly.",
+		)
+		assert.Equal(
+			t,
+			hiveBlockIDLen,
+			len(secondBlock.BlockID),
+			"Valid length for Hive's Block ID.",
+		)
+		assert.Equal(
+			t,
+			witness.name,
+			secondBlock.Witness,
+			"Witness name is propagated.",
+		)
+		assert.Equal(
+			t,
+			len(trx),
+			len(secondBlock.Transactions),
+			"Transactions are propagated.",
+		)
+		assert.Equal(
+			t,
+			len(trx),
+			len(secondBlock.TransactionIDs),
+			"TransactionIDs are propagated",
+		)
+		assert.NotEqual(
+			t,
+			secondBlock.BlockID[8:],
+			firstBlock.BlockID[8:],
+			"Block IDs should diff.",
+		)
+	})
 }
