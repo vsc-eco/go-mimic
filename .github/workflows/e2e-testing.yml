@@ -1,0 +1,42 @@
+name: gomimic E2E
+on:
+  pull_request:
+    branches: [main]
+env:
+  ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+  LOG_LEVEL: ${{ secrets.LOG_LEVEL }}
+  TEST_USERNAME: ${{ secrets.TEST_USERNAME }}
+  TEST_PASSWORD: ${{ secrets.TEST_PASSWORD }}
+  TEST_OWNER_KEY_PRIVATE: ${{ secrets.TEST_OWNER_KEY_PRIVATE }}
+  TEST_OWNER_KEY_PUBLIC: ${{ secrets.TEST_OWNER_KEY_PUBLIC }}
+  TEST_ACTIVE_KEY_PRIVATE: ${{ secrets.TEST_ACTIVE_KEY_PRIVATE }}
+  TEST_ACTIVE_KEY_PUBLIC: ${{ secrets.TEST_ACTIVE_KEY_PUBLIC }}
+  TEST_POSTING_KEY_PRIVATE: ${{ secrets.TEST_POSTING_KEY_PRIVATE }}
+  TEST_POSTING_KEY_PUBLIC: ${{ secrets.TEST_POSTING_KEY_PUBLIC }}
+  TF_VAR_mongoatlas_org_id: ${{ secrets.TF_VAR_mongoatlas_org_id }}
+  MONGODB_ATLAS_PUBLIC_API_KEY: ${{ secrets.MONGODB_ATLAS_PUBLIC_API_KEY }}
+  MONGODB_ATLAS_PRIVATE_API_KEY: ${{ secrets.MONGODB_ATLAS_PRIVATE_API_KEY }}
+  MONGODB_URL: ${{ secrets.MONGODB_URL }}
+  MONGODB_DB_NAME: ${{ secrets.MONGODB_DB_NAME }}
+  
+jobs:
+  e2e-testing:
+    environment: test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: [1.23.0, 1.24.0]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Go version ${{ matrix.go-version }}
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go-version }}
+      - name: Run format checking
+        run: gofmt -d -e -l -s .
+      - name: Run tests
+        run: go test -tags=e2e ./... -v -count=1
+      - name: Run build gomimic
+        run: go build ./cmd/gomimic
+      - name: Run build example
+        run: go build ./cmd/example
