@@ -1,11 +1,9 @@
-name: go-mimic CI
+name: gomimic CI
 on:
   push:
-  pull_request:
-    branches: [main]
 env:
   ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
-  LOG_LEVEL: ${{ secrets.LOG_LEVEL }}
+  LOG_LEVEL: error
   TEST_USERNAME: ${{ secrets.TEST_USERNAME }}
   TEST_PASSWORD: ${{ secrets.TEST_PASSWORD }}
   TEST_OWNER_KEY_PRIVATE: ${{ secrets.TEST_OWNER_KEY_PRIVATE }}
@@ -14,11 +12,6 @@ env:
   TEST_ACTIVE_KEY_PUBLIC: ${{ secrets.TEST_ACTIVE_KEY_PUBLIC }}
   TEST_POSTING_KEY_PRIVATE: ${{ secrets.TEST_POSTING_KEY_PRIVATE }}
   TEST_POSTING_KEY_PUBLIC: ${{ secrets.TEST_POSTING_KEY_PUBLIC }}
-  TF_VAR_mongoatlas_org_id: ${{ secrets.TF_VAR_mongoatlas_org_id }}
-  MONGODB_ATLAS_PUBLIC_API_KEY: ${{ secrets.MONGODB_ATLAS_PUBLIC_API_KEY }}
-  MONGODB_ATLAS_PRIVATE_API_KEY: ${{ secrets.MONGODB_ATLAS_PRIVATE_API_KEY }}
-  MONGODB_URL: ${{ secrets.MONGODB_URL }}
-  MONGODB_DB_NAME: ${{ secrets.MONGODB_DB_NAME }}
   
 jobs:
   ci:
@@ -37,5 +30,7 @@ jobs:
         run: gofmt -d -e -l -s .
       - name: Run tests
         run: go test ./... -v -count=1
-      - name: Run build go-mimic
-        run: go build ./cmd/main.go
+      - name: Run build gomimic
+        run: go build ./cmd/gomimic
+      - name: Run build example
+        run: go build ./cmd/example
